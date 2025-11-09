@@ -2,13 +2,13 @@
 
 **CLI/API framework based on SmartSwitch**
 
-[![PyPI](https://img.shields.io/pypi/v/smpub)](https://pypi.org/project/smpub/)
-[![Python](https://img.shields.io/pypi/pyversions/smpub)](https://pypi.org/project/smpub/)
-[![License](https://img.shields.io/pypi/l/smpub)](https://github.com/genropy/smpub/blob/main/LICENSE)
-[![Tests](https://github.com/genropy/smpub/workflows/Tests/badge.svg)](https://github.com/genropy/smpub/actions)
-[![codecov](https://codecov.io/gh/genropy/smpub/branch/main/graph/badge.svg)](https://codecov.io/gh/genropy/smpub)
-[![Documentation](https://readthedocs.org/projects/smpub/badge/?version=latest)](https://smpub.readthedocs.io)
-[![Part of Genro-Libs](https://img.shields.io/badge/Genro--Libs-toolkit-blue)](https://github.com/softwell/genro-libs)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/genropy/smpub/blob/main/LICENSE)
+[![Tests](https://github.com/genropy/smpub/actions/workflows/test.yml/badge.svg)](https://github.com/genropy/smpub/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/genropy/smpub/branch/main/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/genropy/smpub)
+[![Documentation Status](https://readthedocs.org/projects/smpub/badge/?version=latest)](https://smpub.readthedocs.io/en/latest/?badge=latest)
+[![Part of Genro-Libs](https://img.shields.io/badge/Genro--Libs-toolkit-blue)](https://github.com/softwell/meta-genro-libs)
+[![Development Status](https://img.shields.io/badge/status-alpha-orange.svg)](https://github.com/genropy/smpub)
 
 Build CLI and API applications with automatic command dispatch using [SmartSwitch](https://github.com/genropy/smartswitch).
 

@@ -99,7 +99,10 @@ class Publisher:
             self._cli_handlers[effective_cli_name] = target_object
         if openapi:
             effective_http_path = http_path if http_path is not None else f"/{name}"
-            self._openapi_handlers[effective_http_path] = target_object
+            self._openapi_handlers[effective_http_path] = {
+                'handler': target_object,
+                'name': name
+            }
 
     def run(self, mode: str | None = None, port: int = 8000):
         """
@@ -262,5 +265,44 @@ class Publisher:
         print(f"\nUsage: {sys.argv[0]} {handler_name} <method> [args...]")
 
     def _run_http(self, port: int):
-        """Run HTTP mode (to be implemented)."""
-        raise NotImplementedError("HTTP mode not yet implemented")
+        """
+        Run HTTP mode with FastAPI + Swagger UI.
+
+        Args:
+            port: Port to listen on (default: 8000)
+        """
+        try:
+            from .http import create_fastapi_app
+            import uvicorn
+        except ImportError:
+            print("Error: FastAPI is not installed.")
+            print("Install with: pip install smpub[http]")
+            sys.exit(1)
+
+        # Check if there are any OpenAPI handlers
+        if not self._openapi_handlers:
+            print("Warning: No handlers published with openapi=True")
+            print("Publishing with cli=True, openapi=True to expose via HTTP")
+            return
+
+        # Create FastAPI app
+        app = create_fastapi_app(
+            self,
+            title=f"{self.__class__.__name__} API",
+            description=self.__class__.__doc__ or f"{self.__class__.__name__} API",
+            version="0.1.0"
+        )
+
+        # Print startup info
+        print(f"\n{self.__class__.__name__} - HTTP Mode")
+        print(f"Starting server on http://localhost:{port}")
+        print(f"Swagger UI available at http://localhost:{port}/docs")
+        print(f"OpenAPI schema at http://localhost:{port}/openapi.json")
+        print("\nPublished handlers:")
+        for path, handler_info in self._openapi_handlers.items():
+            handler_name = handler_info['name']
+            print(f"  {handler_name:15} -> {path}")
+        print("\nPress Ctrl+C to stop\n")
+
+        # Run server
+        uvicorn.run(app, host="0.0.0.0", port=port)

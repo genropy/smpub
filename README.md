@@ -260,6 +260,80 @@ self.publish('public', handler, cli=True, openapi=True)
 self.publish('metrics', handler, cli=False, openapi=False)
 ```
 
+## HTTP Mode with FastAPI and Swagger UI
+
+smpub can expose your handlers via HTTP API with automatic OpenAPI documentation:
+
+```bash
+# Install HTTP support
+pip install smpub[http]
+
+# Run in HTTP mode (no arguments)
+python myapp.py
+
+# Run on custom port
+python myapp.py 8080
+```
+
+**Features:**
+- Automatic FastAPI app generation
+- Swagger UI at `/docs`
+- OpenAPI schema at `/openapi.json`
+- Same Pydantic validation as CLI
+- POST endpoints for all methods
+
+**Example Application:**
+
+```python
+from smpub import Publisher, PublishedClass
+from smartswitch import Switcher
+
+class CalculatorHandler(PublishedClass):
+    __slots__ = ('history',)
+    api = Switcher(prefix='calc_')
+
+    def __init__(self):
+        self.history = []
+
+    @api
+    def calc_add(self, a: int, b: int) -> int:
+        """Add two integers."""
+        result = a + b
+        self.history.append(f"add({a}, {b}) = {result}")
+        return result
+
+class CalculatorApp(Publisher):
+    def initialize(self):
+        self.calc = CalculatorHandler()
+        self.publish('calc', self.calc, cli=True, openapi=True)
+
+if __name__ == "__main__":
+    app = CalculatorApp()
+    app.run()  # Auto-detect: CLI if args, HTTP if no args
+```
+
+**HTTP Usage:**
+
+```bash
+# Start server
+python myapp.py
+# Opens Swagger UI at http://localhost:8000/docs
+
+# Call API
+curl -X POST http://localhost:8000/calc/add \
+  -H "Content-Type: application/json" \
+  -d '{"a": 10, "b": 20}'
+# Returns: {"status": "success", "result": 30}
+```
+
+**CLI Usage:**
+
+```bash
+# Same app works in CLI mode
+python myapp.py calc add 10 20
+# Output: 30
+```
+
 ## Part of Genro-Libs Family
 
 smpub is part of the [Genro-Libs toolkit](https://github.com/softwell/genro-libs), a collection of general-purpose Python developer tools.

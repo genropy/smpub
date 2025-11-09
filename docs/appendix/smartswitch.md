@@ -29,7 +29,8 @@ class MyApp(Publisher):
 
 All method calls go through SmartSwitch:
 
-1. **CLI**: `smpub app handler method args`
+1. **CLI**: `smpub myapp handler method args`
+   - Registry loads app
    - Publisher finds handler by name
    - Handler's Switcher finds method by name
    - Method executes with validated args
@@ -269,7 +270,11 @@ class MyApp(Publisher):
         self.handler = MyHandler()
         self.publish('handler', self.handler, cli=True, openapi=True)
 
-# Use via CLI
+# Use via CLI (after registration)
+# $ smpub add myapp --path .
+# $ smpub myapp handler process "hello"
+
+# Or direct execution (development)
 # $ python app.py handler process "hello"
 
 # Use via HTTP

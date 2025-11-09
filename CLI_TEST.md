@@ -135,6 +135,39 @@ smpub testcomplex tasks clear
 smpub remove testcomplex
 ```
 
+### Mail Service (mail_service.py)
+
+Testa: configurazione e invio mail con signature complesse
+
+```bash
+# Registra l'app mail service
+smpub add mailapp --path ./examples
+
+# Configura account mail (tutti i parametri)
+smpub mailapp mail configure_account smtp.gmail.com 587 "user@example.com" true plain
+
+# Configura con defaults (porta e auth method)
+smpub mailapp mail configure_account smtp.outlook.com 587 "user@outlook.com"
+
+# Verifica configurazione
+smpub mailapp mail get_config
+
+# Invia mail con tutti i parametri
+smpub mailapp mail send "recipient@example.com" "Test Subject" "Mail body text" high false
+
+# Invia mail con defaults (priority=normal, html=false)
+smpub mailapp mail send "another@example.com" "Quick message" "Hello there"
+
+# Lista mail inviate
+smpub mailapp mail list_sent
+
+# Pulizia
+smpub mailapp mail clear_messages
+
+# Rimuovi dal registry
+smpub remove mailapp
+```
+
 ## Test HTTP Mode
 
 ```bash

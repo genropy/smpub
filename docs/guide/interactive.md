@@ -30,8 +30,8 @@ which smpub
 ### Step 2: Register Test App
 
 ```bash
-# Register the calculator example app
-smpub add calculator --path ./examples
+# Register the mail service example app
+smpub add mailapp --path ./examples
 
 # Verify registration
 smpub list
@@ -40,49 +40,52 @@ smpub list
 ### Step 3: Test Interactive Mode
 
 ```bash
-# Test 1: Simple addition (interactive prompts for both parameters)
-smpub calculator calc add --interactive
+# Test 1: Configure mail account (complex signature with defaults)
+smpub mailapp mail configure_account --interactive
 # You will be prompted:
-# a (int): 10
-# b (int): 20
-# Result: 30
+# smtp_host (str): smtp.gmail.com
+# smtp_port (int) [default: 587]: <press enter for default>
+# username (str) [default: ]: user@example.com
+# use_tls (bool) [True/False]: True
+# auth_method (plain, login, oauth2) [default: plain]: plain
 
-# Test 2: Short form
-smpub calculator calc add -i
-
-# Test 3: Multiplication with default value
-smpub calculator calc multiply --interactive
+# Test 2: Send email with all parameters
+smpub mailapp mail send --interactive
 # You will be prompted:
-# x (float): 5.5
-# y (float) [default: 2.0]: <press enter for default>
-# Result: 11.0
+# to (str): recipient@example.com
+# subject (str): Test email
+# body (str): This is a test message
+# priority (low, normal, high) [default: normal]: high
+# html (bool) [True/False]: False
 
-# Test 4: Complex signature with Literal and boolean
-smpub add testcomplex --path ./examples
-smpub testcomplex tasks create --interactive
+# Test 3: Send email with short form (using defaults)
+smpub mailapp mail send -i
 # You will be prompted:
-# title (str): Fix bug
-# priority (low, medium, high): high
-# max_retries (int) [default: 3]: 5
-# notify (bool) [True/False]: true
+# to (str): another@example.com
+# subject (str): Quick message
+# body (str): Hello!
+# priority (low, normal, high) [default: normal]: <press enter for default>
+# html (bool) [True/False]: <press enter for default>
+
+# Test 4: Get current configuration (no parameters)
+smpub mailapp mail get_config
 ```
 
 ### Step 4: Verify Results
 
 ```bash
-# List created tasks
-smpub testcomplex tasks list
+# List sent messages
+smpub mailapp mail list_sent
 
-# Clear tasks
-smpub testcomplex tasks clear
+# Clear messages
+smpub mailapp mail clear_messages
 ```
 
 ### Step 5: Cleanup
 
 ```bash
 # Remove from registry
-smpub remove calculator
-smpub remove testcomplex
+smpub remove mailapp
 
 # Verify removal
 smpub list
@@ -104,10 +107,10 @@ smpub list
 
 ```bash
 # Normal mode: all arguments on command line
-smpub calculator calc add 10 20
+smpub mailapp mail send "user@example.com" "Subject" "Body text" high false
 
 # Interactive mode: prompts for each parameter
-smpub calculator calc add --interactive
+smpub mailapp mail send --interactive
 ```
 
 See [CLI Mode](cli-mode.md) for more examples.

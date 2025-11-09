@@ -43,41 +43,61 @@ pip install smpub[http]
 ### 1. Create a Handler
 
 ```python
+from typing import Literal
 from smpub import PublishedClass
 from smartswitch import Switcher
 
-class UserHandler(PublishedClass):
-    __slots__ = ('users',)
-    api = Switcher(prefix='user_')
+class MailHandler(PublishedClass):
+    __slots__ = ('config', 'messages')
+    api = Switcher(prefix='mail_')
 
     def __init__(self):
-        self.users = {}
+        self.config = {}
+        self.messages = []
 
     @api
-    def user_add(self, name: str, email: str):
-        """Add a new user."""
-        self.users[name] = email
-        return f"User {name} added"
+    def mail_configure_account(
+        self,
+        smtp_host: str,
+        smtp_port: int = 587,
+        username: str = "",
+        use_tls: bool = True,
+        auth_method: Literal["plain", "login", "oauth2"] = "plain"
+    ):
+        """Configure mail account settings."""
+        self.config = {"smtp_host": smtp_host, "smtp_port": smtp_port,
+                      "username": username, "use_tls": use_tls}
+        return {"success": True, "config": self.config}
 
     @api
-    def user_list(self):
-        """List all users."""
-        return list(self.users.keys())
+    def mail_send(
+        self,
+        to: str,
+        subject: str,
+        body: str,
+        priority: Literal["low", "normal", "high"] = "normal",
+        html: bool = False
+    ):
+        """Send an email message."""
+        message = {"to": to, "subject": subject, "body": body,
+                  "priority": priority, "html": html}
+        self.messages.append(message)
+        return {"success": True, "message_id": len(self.messages)}
 ```
 
 ### 2. Create an App
 
 ```python
 from smpub import Publisher
-from .handlers import UserHandler
+from .handlers import MailHandler
 
-class MainClass(Publisher):
+class MailApp(Publisher):
     def initialize(self):
-        self.users = UserHandler()
-        self.publish('users', self.users, cli=True, openapi=True)
+        self.mail = MailHandler()
+        self.publish('mail', self.mail, cli=True, openapi=True)
 
 if __name__ == "__main__":
-    app = MainClass()
+    app = MailApp()
     app.run()  # Auto-detect CLI or HTTP mode
 ```
 
@@ -86,28 +106,32 @@ if __name__ == "__main__":
 **CLI Mode:**
 ```bash
 # Register your app
-smpub add myapp --path ~/projects/myapp
+smpub add mailapp --path ~/projects/mailapp
 
-# Run commands
-smpub myapp users add john john@example.com
-smpub myapp users list
+# Configure mail account
+smpub mailapp mail configure_account smtp.gmail.com 587 user@example.com
+
+# Send email
+smpub mailapp mail send recipient@example.com "Hello" "Message body" high false
 ```
 
 **HTTP Mode:**
+
 ```bash
 # Start server
-python myapp.py
+python mailapp.py
 # Opens Swagger UI at http://localhost:8000/docs
 
 # Call API
-curl -X POST http://localhost:8000/users/add \
+curl -X POST http://localhost:8000/mail/send \
   -H "Content-Type: application/json" \
-  -d '{"name": "john", "email": "john@example.com"}'
+  -d '{"to": "user@example.com", "subject": "Hello", "body": "Message"}'
 ```
 
 **Interactive Mode:**
+
 ```bash
-smpub myapp users add --interactive
+smpub mailapp mail send --interactive
 # Prompts for each parameter with type hints
 ```
 
@@ -116,6 +140,7 @@ smpub myapp users add --interactive
 For complete documentation, visit [smpub.readthedocs.io](https://smpub.readthedocs.io).
 
 Topics covered:
+
 - Publisher and handler patterns
 - CLI command structure
 - Type validation with Pydantic
@@ -129,6 +154,7 @@ Topics covered:
 smpub is part of the [Genro-Libs toolkit](https://github.com/softwell/genro-libs), a collection of general-purpose Python developer tools.
 
 **Related Projects:**
+
 - [smartswitch](https://github.com/genropy/smartswitch) - Rule-based function dispatch (used by smpub)
 - [gtext](https://github.com/genropy/gtext) - Text transformation tool
 

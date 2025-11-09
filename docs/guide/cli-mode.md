@@ -2,7 +2,7 @@
 
 Command-line interface for your handlers.
 
-## Registry Usage (Recommended)
+## Usage
 
 First, register your app:
 
@@ -29,15 +29,6 @@ smpub myapp --help
 
 # Handler help
 smpub myapp <handler> --help
-```
-
-## Development Mode (Direct Execution)
-
-For testing during development, you can run directly:
-
-```bash
-python myapp.py <handler> <method> [args...]
-python myapp.py --help
 ```
 
 See [Quick Start](../user-guide/quickstart.md) for examples.

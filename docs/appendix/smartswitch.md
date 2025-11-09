@@ -270,12 +270,9 @@ class MyApp(Publisher):
         self.handler = MyHandler()
         self.publish('handler', self.handler, cli=True, openapi=True)
 
-# Use via CLI (after registration)
+# Use via CLI
 # $ smpub add myapp --path .
 # $ smpub myapp handler process "hello"
-
-# Or direct execution (development)
-# $ python app.py handler process "hello"
 
 # Use via HTTP
 # POST /handler/process {"data": "hello"}

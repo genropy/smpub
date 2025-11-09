@@ -42,8 +42,6 @@ cat ~/.smartlibs/publisher/registry.json
 
 ## Test CLI con Calculator Example
 
-### Metodo 1: Via Registry (RACCOMANDATO)
-
 ```bash
 # Registra l'app calculator
 smpub add calculator --path ./examples
@@ -56,22 +54,9 @@ smpub calculator calc multiply 5.5 2.0
 
 # Test con default value
 smpub calculator calc multiply 5.5
-```
 
-### Metodo 2: Esecuzione Diretta (per testing/sviluppo)
-
-```bash
-# Vai nella directory examples
-cd examples
-
-# Test diretto (senza registry)
-python calculator_http.py calc add 10 20
-
-# Test con float
-python calculator_http.py calc multiply 5.5 2.0
-
-# Test con default value
-python calculator_http.py calc multiply 5.5
+# Rimuovi dal registry quando hai finito
+smpub remove calculator
 ```
 
 ## Test Interactive Mode (se gum installato)
@@ -83,27 +68,71 @@ brew install gum
 # NOTA: In zsh, quota le parentesi quadre
 pip install 'smpub[gum]'
 
+# Registra l'app se non già fatto
+smpub add calculator --path ./examples
+
 # Test interactive
-python calculator_http.py calc add --interactive
+smpub calculator calc add --interactive
 
 # Short form
-python calculator_http.py calc multiply -i
+smpub calculator calc multiply -i
 ```
 
 ## Test Type Validation
 
+### Simple Types (Calculator)
+
 ```bash
+# Registra l'app se non già fatto
+smpub add calculator --path ./examples
+
 # Valid integers
-python calculator_http.py calc add 10 20
+smpub calculator calc add 10 20
 
 # Invalid input (should show validation error)
-python calculator_http.py calc add ten twenty
+smpub calculator calc add ten twenty
 
 # Valid float
-python calculator_http.py calc multiply 3.14 2
+smpub calculator calc multiply 3.14 2
 
 # Invalid float
-python calculator_http.py calc multiply abc 2
+smpub calculator calc multiply abc 2
+```
+
+### Complex Signature (test_complex.py)
+
+Testa: string, Literal (scelta tra valori), int, boolean
+
+```bash
+# Registra l'app test_complex
+smpub add testcomplex --path ./examples
+
+# Test completo con tutti i parametri
+smpub testcomplex tasks create "Fix bug" high 5 true
+
+# Con default values (max_retries=3, notify=false)
+smpub testcomplex tasks create "Add feature" medium
+
+# Con solo alcuni default
+smpub testcomplex tasks create "Update docs" low 10
+
+# Test Literal validation (solo low/medium/high accettati)
+smpub testcomplex tasks create "Invalid priority" invalid
+# Dovrebbe dare errore di validazione
+
+# Test boolean (true/false, yes/no, 1/0)
+smpub testcomplex tasks create "Test notify" high 3 yes
+smpub testcomplex tasks create "Test notify" high 3 1
+smpub testcomplex tasks create "Test notify" high 3 false
+
+# Lista task creati
+smpub testcomplex tasks list
+
+# Pulizia
+smpub testcomplex tasks clear
+
+# Rimuovi dal registry
+smpub remove testcomplex
 ```
 
 ## Test HTTP Mode

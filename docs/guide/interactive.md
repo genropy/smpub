@@ -22,10 +22,4 @@ smpub myapp handler method --interactive
 smpub myapp handler method -i
 ```
 
-**Development mode** (without registry):
-
-```bash
-python myapp.py handler method --interactive
-```
-
 See [Quick Start](../user-guide/quickstart.md) for examples.

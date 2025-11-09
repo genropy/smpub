@@ -111,6 +111,34 @@ smpub **depends on** smartswitch:
 - Publisher creates root `parent_api = Switcher()`
 - Hierarchical API structure through parent linking
 
+## Development Workflow
+
+**MANDATORY sequence before every push:**
+
+1. **Run pytest locally**
+   ```bash
+   pytest
+   ```
+
+2. **Run ruff locally**
+   ```bash
+   ruff check .
+   ```
+
+3. **Push only if both pass**
+   ```bash
+   git push origin main
+   ```
+   Pre-push hook will automatically run ACT for final validation.
+
+**CRITICAL RULES:**
+- ❌ **NEVER use `--no-verify`** without explicit user authorization
+- ✅ **ALWAYS investigate** pre-push failures instead of bypassing
+- ✅ Local testing is FAST (seconds) vs ACT is SLOW (minutes)
+- ✅ "LOCALE PRIMA, ACT POI" (Local first, ACT after)
+
+**Rationale**: Local tests catch errors immediately. ACT is the final safety net, not the first line of defense.
+
 ## Mistakes to Avoid
 
 ❌ **DON'T**:
@@ -118,12 +146,14 @@ smpub **depends on** smartswitch:
 - Break backward compatibility without major version bump
 - Skip tests when adding features
 - Include Claude as co-author in commits
+- Use `--no-verify` to bypass pre-push hook without authorization
 
 ✅ **DO**:
 - Keep CLI focused on registry management and app loading
 - Keep Publisher focused on orchestration
 - Maintain clean separation of concerns
 - Test all public APIs
+- Run pytest and ruff locally before pushing
 
 ## Quick Reference
 

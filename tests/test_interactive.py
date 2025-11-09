@@ -3,7 +3,7 @@ Tests for interactive module (gum-based parameter prompting).
 """
 
 import subprocess
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch
 
 import pytest
 

@@ -3,8 +3,7 @@ Tests for Publisher and PublishedClass.
 """
 
 import sys
-from io import StringIO
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from smartswitch import Switcher
@@ -318,7 +317,7 @@ class TestRunModes:
         app = TestApp()
 
         with patch.object(sys, 'argv', ['test_app']):
-            with patch.object(app, '_run_http') as mock_http:
+            with patch.object(app, '_run_http'):
                 # Mock HTTP mode to avoid actually starting server
                 app.run()
                 # Note: This will actually call _run_cli for help

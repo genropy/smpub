@@ -2,6 +2,7 @@
 Publisher - Base class for publishing handlers with CLI/API exposure.
 """
 
+import os
 import sys
 from pydantic import ValidationError
 from smartswitch import Switcher

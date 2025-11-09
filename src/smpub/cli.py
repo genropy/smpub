@@ -37,24 +37,70 @@ def save_registry(registry, global_mode=False):
         json.dump(registry, f, indent=2)
 
 
-def add_app(name, path, global_mode=False):
+def discover_publisher_class(path):
+    """
+    Discover Publisher class in the given path.
+
+    Returns tuple (module_name, class_name) or (None, None) if not found.
+    """
+    path = Path(path)
+    if not path.is_dir():
+        return None, None
+
+    # Find all Python files (excluding __pycache__, etc.)
+    py_files = [f for f in path.glob("*.py")
+                if not f.name.startswith("_")]
+
+    for py_file in py_files:
+        # Read file and look for "class X(Publisher):"
+        try:
+            content = py_file.read_text()
+            # Simple pattern matching for class definition
+            import re
+            pattern = r'class\s+(\w+)\s*\([^)]*Publisher[^)]*\)\s*:'
+            matches = re.findall(pattern, content)
+            if matches:
+                # Found a Publisher subclass
+                module_name = py_file.stem  # filename without .py
+                class_name = matches[0]
+                return module_name, class_name
+        except Exception:
+            continue
+
+    return None, None
+
+
+def add_app(name, path=None, global_mode=False):
     """Register an app in registry."""
     registry = load_registry(global_mode)
+
+    # Default to current directory if no path specified
+    if path is None:
+        path = "."
 
     path = Path(path).resolve()
     if not path.exists():
         print(f"Error: Path {path} does not exist")
         sys.exit(1)
 
+    # Auto-discover module and class
+    module_name, class_name = discover_publisher_class(path)
+
+    if module_name is None:
+        print(f"Error: No Publisher class found in {path}")
+        print("Make sure your app has a class that inherits from Publisher")
+        sys.exit(1)
+
     registry["apps"][name] = {
         "path": str(path),
-        "module": f"{name}.main",  # Convention
-        "class": "MainClass"        # Convention
+        "module": module_name,
+        "class": class_name
     }
 
     save_registry(registry, global_mode)
     mode_str = "globally" if global_mode else "locally"
     print(f"✓ App '{name}' registered {mode_str} at {path}")
+    print(f"  Module: {module_name}, Class: {class_name}")
 
 
 def list_apps(global_mode=False):
@@ -123,8 +169,8 @@ def print_help():
 smpub - Smart Publisher CLI
 
 Management:
-    smpub add <name> --path <path> [--global]
-                                Register an app
+    smpub add <name> [--path <path>] [--global]
+                                Register an app (defaults to current directory)
     smpub remove <name> [--global]
                                 Unregister an app
     smpub list [--global]       List registered apps
@@ -135,13 +181,23 @@ Execution:
     smpub <app-name> --help     Show app help
 
 Examples:
+    # Register app in current directory (auto-discovers Publisher class)
+    cd ~/projects/myapp
+    smpub add myapp
+
+    # Register app with explicit path
     smpub add myapp --path ~/projects/myapp
+
+    # Run app commands
     smpub myapp --help
     smpub myapp handler add key value
+
+    # List and remove
     smpub list
     smpub remove myapp
 
 Options:
+    --path <path>               Path to app directory (default: current directory)
     --global                    Use global registry (~/.smartlibs/publisher/)
                                 instead of local (./.published)
     """)
@@ -158,15 +214,20 @@ def main():
 
     # Management commands
     if command == "add":
-        if len(sys.argv) < 4 or '--path' not in sys.argv:
-            print("Usage: smpub add <name> --path <path> [--global]")
+        if len(sys.argv) < 3:
+            print("Usage: smpub add <name> [--path <path>] [--global]")
             sys.exit(1)
         name = sys.argv[2]
-        path_idx = sys.argv.index('--path') + 1
-        if path_idx >= len(sys.argv):
-            print("Error: --path requires a value")
-            sys.exit(1)
-        path = sys.argv[path_idx]
+
+        # Check if --path is specified
+        path = None
+        if '--path' in sys.argv:
+            path_idx = sys.argv.index('--path') + 1
+            if path_idx >= len(sys.argv):
+                print("Error: --path requires a value")
+                sys.exit(1)
+            path = sys.argv[path_idx]
+
         add_app(name, path, global_mode)
         return
 

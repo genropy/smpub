@@ -25,7 +25,7 @@ See the [Architecture section](../README.md#architecture) in the main README for
 - **PublishedClass** - Mixin for handlers (optional)
 - **PublisherContext** - Context object injected into handlers
 - **Validation Layer** - Pydantic-based type validation
-- **Interactive Layer** - gum-based parameter prompting
+- **Interactive Layer** - dialog-based parameter prompting
 
 ## Features
 
@@ -40,12 +40,12 @@ See [Type Validation](../README.md#type-validation-with-pydantic) for examples.
 
 ### Interactive Mode
 
-User-friendly parameter prompting with gum:
+User-friendly parameter prompting with dialog:
 - Type-aware prompts
 - Default value display
 - Boolean choice menus
 
-See [Interactive Mode](../README.md#interactive-mode-with-gum) for details.
+See [Interactive Mode](../README.md#interactive-mode-with-dialog) for details.
 
 ## API Reference
 
@@ -116,7 +116,7 @@ pytest tests/test_validation.py -v
 
 Test files:
 - `tests/test_validation.py` - Pydantic validation tests
-- `tests/test_interactive.py` - gum integration tests
+- `tests/test_interactive.py` - dialog integration tests
 - `tests/test_publisher.py` - Publisher/Handler tests
 
 ## Contributing

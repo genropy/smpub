@@ -70,11 +70,11 @@ python myapp.py greeting history
 
 ## Try Interactive Mode
 
-Install gum first:
+Install dialog first:
 
 ```bash
 # macOS
-brew install gum
+brew install dialog
 ```
 
 Then use interactive mode:

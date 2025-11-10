@@ -3,8 +3,61 @@ Validation utilities using Pydantic.
 """
 
 import inspect
+import re
 from typing import Any, get_origin
 from pydantic import BaseModel, ValidationError, create_model
+
+
+def parse_docstring_params(docstring: str) -> dict[str, str]:
+    """
+    Parse parameter descriptions from docstring.
+
+    Args:
+        docstring: Method docstring
+
+    Returns:
+        Dictionary mapping parameter names to descriptions
+    """
+    if not docstring:
+        return {}
+
+    params = {}
+    in_args_section = False
+    current_param = None
+    current_desc = []
+
+    for line in docstring.split("\n"):
+        line = line.strip()
+
+        # Check if we're entering Args section
+        if line.startswith("Args:"):
+            in_args_section = True
+            continue
+
+        # Exit Args section on next section or empty line after params
+        if in_args_section and line and not line.startswith(" ") and ":" not in line:
+            break
+
+        if in_args_section:
+            # Match parameter line: "    name: description" or "    name (type): description"
+            match = re.match(r"^\s*(\w+)(?:\s*\([^)]+\))?\s*:\s*(.+)$", line)
+            if match:
+                # Save previous parameter
+                if current_param:
+                    params[current_param] = " ".join(current_desc).strip()
+
+                # Start new parameter
+                current_param = match.group(1)
+                current_desc = [match.group(2)]
+            elif current_param and line:
+                # Continuation of previous parameter description
+                current_desc.append(line)
+
+    # Save last parameter
+    if current_param:
+        params[current_param] = " ".join(current_desc).strip()
+
+    return params
 
 
 def create_pydantic_model(method) -> type[BaseModel]:

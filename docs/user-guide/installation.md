@@ -31,24 +31,13 @@ This includes:
 
 ### Interactive Mode
 
-For gum-based interactive parameter prompting:
+For interactive parameter prompting with questionary:
 
 ```bash
-pip install smpub[gum]
+pip install questionary
 ```
 
-**Note**: This also requires the `gum` CLI tool:
-
-```bash
-# macOS
-brew install gum
-
-# Linux
-curl https://raw.githubusercontent.com/charmbracelet/gum/main/install.sh | bash
-
-# Windows
-scoop install gum
-```
+Questionary is a pure Python package that works on all platforms (Windows, macOS, Linux).
 
 ### Development Tools
 

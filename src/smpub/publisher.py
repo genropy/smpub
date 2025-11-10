@@ -279,7 +279,7 @@ class Publisher:
             port: Port to listen on (default: 8000)
         """
         try:
-            from .http import create_fastapi_app
+            from .api_server import create_fastapi_app
             import uvicorn
         except ImportError:
             print("Error: FastAPI is not installed.")

@@ -3,14 +3,14 @@
 
 from typing import Literal
 from smpub import Publisher, PublishedClass
-from smartswitch import Switcher
+from smpub.apiswitcher import ApiSwitcher
 
 
 class AccountHandler(PublishedClass):
     """Handler for account management."""
 
     __slots__ = ('accounts',)
-    api = Switcher(prefix='account_')
+    api = ApiSwitcher(prefix='account_')
 
     def __init__(self):
         self.accounts = {}
@@ -89,7 +89,7 @@ class MailHandler(PublishedClass):
     """Handler for mail operations."""
 
     __slots__ = ('account_handler', 'messages')
-    api = Switcher(prefix='mail_')
+    api = ApiSwitcher(prefix='mail_')
 
     def __init__(self, account_handler):
         self.account_handler = account_handler

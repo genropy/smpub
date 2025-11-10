@@ -37,14 +37,15 @@ dev = [
     "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
+    "textual>=0.41.0",
 ]
 docs = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.4.0",
     "mkdocstrings[python]>=0.24.0",
 ]
-gum = [
-    "gum-python>=0.1.0",
+interactive = [
+    "textual>=0.41.0",
 ]
 http = [
     "fastapi>=0.104.0",
@@ -59,7 +60,7 @@ all = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.4.0",
     "mkdocstrings[python]>=0.24.0",
-    "gum-python>=0.1.0",
+    "textual>=0.41.0",
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
 ]

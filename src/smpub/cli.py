@@ -185,9 +185,13 @@ Examples:
     # Register app with explicit path
     smpub add myapp --path ~/projects/myapp
 
-    # Run app commands
+    # Run app commands (CLI mode)
     smpub myapp --help
     smpub myapp handler add key value
+
+    # Start HTTP server
+    smpub myapp serve           # default port 8000
+    smpub myapp serve 8084      # custom port
 
     # List and remove
     smpub list
@@ -248,6 +252,24 @@ def main():
     # App execution
     app_name = command
     app = load_app(app_name, global_mode)
+
+    # Check if next argument is 'serve'
+    if len(sys.argv) >= 3 and sys.argv[2] == "serve":
+        # HTTP mode: smpub <appname> serve [port]
+        port = 8000  # default port
+        if len(sys.argv) >= 4:
+            try:
+                port = int(sys.argv[3])
+            except ValueError:
+                print(f"Error: Invalid port number '{sys.argv[3]}'")
+                sys.exit(1)
+
+        # Run in HTTP mode with specified port
+        print(f"Starting {app_name} on http://0.0.0.0:{port}")
+        print(f"Swagger UI available at http://localhost:{port}/docs")
+        print(f"ReDoc available at http://localhost:{port}/redoc")
+        app.run(mode="http", port=port)
+        return
 
     # Remove 'smpub', app_name, and --global from argv
     new_argv = [sys.argv[0]]

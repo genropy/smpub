@@ -25,7 +25,7 @@ Build CLI and API applications with automatic command dispatch using [SmartSwitc
 - 🔀 **SmartSwitch Integration** - Rule-based function dispatch
 - 💻 **CLI Generation** - Automatic command-line interface
 - ✅ **Pydantic Validation** - Automatic type validation and conversion
-- 🎨 **Interactive Mode** - Optional gum-based parameter prompting
+- 🎨 **Interactive Mode** - Optional questionary-based parameter prompting
 - 🌐 **HTTP/API Mode** - FastAPI with OpenAPI/Swagger UI
 - 📝 **Registry System** - Local/global app registration
 
@@ -146,7 +146,7 @@ Topics covered:
 - Publisher and handler patterns
 - CLI command structure
 - Type validation with Pydantic
-- Interactive mode with gum
+- Interactive mode with questionary
 - HTTP/API mode with FastAPI
 - Registry system (local/global)
 - Architecture and design
@@ -165,7 +165,7 @@ smpub is part of the [Genro-Libs toolkit](https://github.com/softwell/genro-libs
 - Python 3.10+
 - smartswitch >= 0.1.0
 - pydantic >= 2.0
-- [gum](https://github.com/charmbracelet/gum) (optional, for interactive mode)
+- questionary (optional, for interactive mode)
 
 ## Development
 

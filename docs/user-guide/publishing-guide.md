@@ -60,7 +60,7 @@ def divide(numerator: float, denominator: float) -> float:
 pip install smpub
 
 # Optional: for interactive mode
-brew install gum  # macOS
+brew install dialog  # macOS
 ```
 
 ### Step 2: Create Handler Classes

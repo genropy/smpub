@@ -1,0 +1,324 @@
+"""
+FastAPI integration for Publisher HTTP mode.
+"""
+
+import inspect
+from enum import Enum
+from typing import Any
+
+try:
+    from fastapi import FastAPI, HTTPException
+    from pydantic import ValidationError
+except ImportError:
+    FastAPI = None
+
+from .apiswitcher import ApiSwitcher
+
+
+def create_fastapi_app(
+    publisher,
+    title: str = "SmartPublisher API",
+    description: str = "Auto-generated API from Publisher",
+    version: str = "0.1.0",
+) -> Any:
+    """
+    Create a FastAPI app from a Publisher instance.
+
+    Args:
+        publisher: Publisher instance
+        title: API title
+        description: API description
+        version: API version
+
+    Returns:
+        FastAPI app instance
+    """
+    if FastAPI is None:
+        raise ImportError("FastAPI is not installed. Install with: pip install smpub[http]")
+
+    app = FastAPI(
+        title=title,
+        description=description,
+        version=version,
+    )
+
+    # Collect all models and endpoints first
+    endpoints = []
+
+    # Register routes for each handler
+    for http_path, handler_info in publisher._openapi_handlers.items():
+        handler = handler_info["handler"]
+        handler_name = handler_info["name"]
+
+        # Get handler's Switcher
+        if not hasattr(handler.__class__, "api"):
+            continue
+
+        switcher = handler.__class__.api
+
+        # Get prefix if any
+        prefix = switcher.prefix if hasattr(switcher, "prefix") else ""
+
+        # Find all methods that can be called
+        for method_name in dir(handler):
+            # Skip private/special methods
+            if method_name.startswith("_"):
+                continue
+
+            # Skip class attributes that aren't methods
+            attr = getattr(handler, method_name)
+            if not callable(attr):
+                continue
+
+            # Skip if method doesn't match prefix
+            if prefix and not method_name.startswith(prefix):
+                continue
+
+            # Get actual method name (strip prefix)
+            api_method_name = method_name[len(prefix) :] if prefix else method_name
+
+            # Get method
+            method = getattr(handler, method_name)
+
+            # Skip if not a real method
+            if not inspect.ismethod(method):
+                continue
+
+            # Require ApiSwitcher for OpenAPI/HTTP mode
+            if not isinstance(switcher, ApiSwitcher):
+                raise TypeError(
+                    f"Handler '{handler_name}' must use ApiSwitcher for OpenAPI exposure. "
+                    f"Change 'from smartswitch import Switcher' to "
+                    f"'from smpub.apiswitcher import ApiSwitcher' and use "
+                    f"'api = ApiSwitcher(prefix=...)' instead of 'api = Switcher(prefix=...)'."
+                )
+
+            # Get pre-created Pydantic model from ApiSwitcher
+            RequestModel = switcher.get_pydantic_model(method_name)
+
+            # Store endpoint info
+            route_path = f"{http_path}/{api_method_name}"
+            endpoints.append(
+                {
+                    "route_path": route_path,
+                    "handler_name": handler_name,
+                    "api_method_name": api_method_name,
+                    "method": method,
+                    "RequestModel": RequestModel,
+                }
+            )
+
+    # Store models in globals so FastAPI can find them
+    import sys
+
+    this_module = sys.modules[__name__]
+
+    # Now register all routes with pre-created models
+    for endpoint_info in endpoints:
+        route_path = endpoint_info["route_path"]
+        handler_name = endpoint_info["handler_name"]
+        api_method_name = endpoint_info["api_method_name"]
+        method = endpoint_info["method"]
+        RequestModel = endpoint_info["RequestModel"]
+
+        if RequestModel:
+            # Store model in module globals so FastAPI can find it
+            model_name = RequestModel.__name__
+            setattr(this_module, model_name, RequestModel)
+
+            # Create endpoint function with proper type annotation
+            # ApiSwitcher models are created at decoration time, so FastAPI can introspect them
+            def make_endpoint(method_ref, model_cls):
+                async def endpoint_func(body: model_cls):
+                    f"""Auto-generated endpoint for {handler_name}.{api_method_name}"""
+                    try:
+                        params_dict = body.model_dump()
+                        # Convert enum values back to strings
+                        for key, value in params_dict.items():
+                            if isinstance(value, Enum):
+                                params_dict[key] = value.value
+                        result = method_ref(**params_dict)
+                        return {"result": result}
+                    except ValidationError as e:
+                        raise HTTPException(status_code=422, detail=str(e))
+                    except Exception as e:
+                        raise HTTPException(status_code=500, detail=str(e))
+
+                # Set proper name and annotations for FastAPI introspection
+                endpoint_func.__name__ = f"{handler_name}_{api_method_name}"
+                endpoint_func.__annotations__ = {"body": model_cls, "return": dict}
+
+                return endpoint_func
+
+            endpoint_func = make_endpoint(method, RequestModel)
+
+            # Register with FastAPI
+            app.post(route_path, summary=f"{handler_name}.{api_method_name}")(endpoint_func)
+
+        else:
+            # No parameters - simple GET endpoint
+            def make_simple_endpoint(method_ref):
+                async def endpoint():
+                    try:
+                        result = method_ref()
+                        return {"result": result}
+                    except Exception as e:
+                        raise HTTPException(status_code=500, detail=str(e))
+
+                return endpoint
+
+            endpoint_func = make_simple_endpoint(method)
+            app.get(route_path, summary=f"{handler_name}.{api_method_name}")(endpoint_func)
+
+    # Force schema reset to ensure our custom function is used
+    app.openapi_schema = None
+
+    # Custom OpenAPI schema generation to fix dynamic model schemas
+    def custom_openapi():
+        if app.openapi_schema:
+            return app.openapi_schema
+
+        from fastapi.openapi.utils import get_openapi
+
+        # Generate base schema
+        openapi_schema = get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            routes=app.routes,
+        )
+
+        # Fix schema for endpoints with dynamic models
+        for endpoint_info in endpoints:
+            if endpoint_info["RequestModel"]:
+                route_path = endpoint_info["route_path"]
+                model_class = endpoint_info["RequestModel"]
+
+                # Get the Pydantic model schema
+                model_schema = model_class.model_json_schema()
+
+                # Update the OpenAPI schema for this path
+                if route_path in openapi_schema.get("paths", {}):
+                    post_op = openapi_schema["paths"][route_path].get("post", {})
+                    if "requestBody" in post_op:
+                        # Replace the generic Body schema with our model schema
+                        post_op["requestBody"]["content"]["application/json"][
+                            "schema"
+                        ] = model_schema
+
+                        # Add model to components/schemas if it references other schemas
+                        if "$defs" in model_schema:
+                            if "components" not in openapi_schema:
+                                openapi_schema["components"] = {}
+                            if "schemas" not in openapi_schema["components"]:
+                                openapi_schema["components"]["schemas"] = {}
+
+                            # Add all definitions to components
+                            for def_name, def_schema in model_schema["$defs"].items():
+                                openapi_schema["components"]["schemas"][def_name] = def_schema
+
+        app.openapi_schema = openapi_schema
+        return app.openapi_schema
+
+    app.openapi = custom_openapi
+
+    # Add root endpoint with links to documentation
+    @app.get("/", include_in_schema=False)
+    async def root():
+        """Root endpoint with HTML links to API documentation."""
+        from fastapi.responses import HTMLResponse
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{title}</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    max-width: 800px;
+                    margin: 50px auto;
+                    padding: 20px;
+                    background: #f5f5f5;
+                }}
+                .container {{
+                    background: white;
+                    padding: 40px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                h1 {{
+                    color: #333;
+                    margin-bottom: 10px;
+                }}
+                .version {{
+                    color: #666;
+                    font-size: 14px;
+                    margin-bottom: 20px;
+                }}
+                .description {{
+                    color: #666;
+                    margin-bottom: 30px;
+                    line-height: 1.6;
+                }}
+                .links {{
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                }}
+                .link-card {{
+                    display: block;
+                    padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    color: #333;
+                    transition: all 0.2s;
+                    border-left: 4px solid #007bff;
+                }}
+                .link-card:hover {{
+                    background: #e9ecef;
+                    transform: translateX(5px);
+                }}
+                .link-title {{
+                    font-weight: 600;
+                    font-size: 16px;
+                    margin-bottom: 5px;
+                    color: #007bff;
+                }}
+                .link-desc {{
+                    font-size: 14px;
+                    color: #666;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>{title}</h1>
+                <div class="version">Version {version}</div>
+                <div class="description">{description}</div>
+
+                <div class="links">
+                    <a href="/docs" class="link-card">
+                        <div class="link-title">📖 Swagger UI</div>
+                        <div class="link-desc">Interactive API documentation with try-it-out functionality</div>
+                    </a>
+
+                    <a href="/redoc" class="link-card">
+                        <div class="link-title">📚 ReDoc</div>
+                        <div class="link-desc">Alternative API documentation with a clean, three-panel design</div>
+                    </a>
+
+                    <a href="/openapi.json" class="link-card">
+                        <div class="link-title">⚙️ OpenAPI Schema</div>
+                        <div class="link-desc">Raw OpenAPI specification in JSON format</div>
+                    </a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return HTMLResponse(content=html_content)
+
+    return app

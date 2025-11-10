@@ -23,7 +23,7 @@ Build CLI and API applications with automatic command dispatch using [SmartSwitc
 - 🔀 **SmartSwitch Integration** - Rule-based function dispatch
 - 💻 **CLI Generation** - Automatic command-line interface
 - ✅ **Pydantic Validation** - Automatic type validation and conversion
-- 🎨 **Interactive Mode** - Optional gum-based parameter prompting
+- 🎨 **Interactive Mode** - Optional questionary-based parameter prompting
 - 🌐 **HTTP/API Mode** - FastAPI integration with Swagger UI
 - 📝 **Registry System** - Local/global app registration
 - 🏗️ **Clean API** - Simple decorator-based handler definition
@@ -38,8 +38,8 @@ pip install smpub
 # With HTTP support
 pip install smpub[http]
 
-# With interactive mode (requires gum CLI tool)
-pip install smpub[gum]
+# Interactive mode uses questionary (install separately)
+pip install questionary
 ```
 
 ### Basic Example

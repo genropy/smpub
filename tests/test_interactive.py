@@ -1,249 +1,168 @@
 """
-Tests for interactive module (gum-based parameter prompting).
+Tests for interactive module (Textual-based parameter prompting).
 """
 
-import subprocess
 from unittest.mock import Mock, patch
 
 import pytest
 
 from smpub.interactive import (
-    is_gum_available,
-    prompt_for_parameter,
-    prompt_for_boolean,
+    is_textual_available,
     prompt_for_parameters,
 )
 
 
-class TestIsGumAvailable:
-    """Test gum availability detection."""
+class TestIsTextualAvailable:
+    """Test textual availability detection."""
 
-    @patch('subprocess.run')
-    def test_gum_available(self, mock_run):
-        """Should return True when gum is installed."""
-        mock_run.return_value = Mock(returncode=0)
+    def test_textual_available(self):
+        """Should return True when textual is installed."""
+        # If we're running tests, textual should be available
+        assert is_textual_available() is True
 
-        assert is_gum_available() is True
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ['gum', '--version']
-
-    @patch('subprocess.run')
-    def test_gum_not_found(self, mock_run):
-        """Should return False when gum is not in PATH."""
-        mock_run.side_effect = FileNotFoundError()
-
-        assert is_gum_available() is False
-
-    @patch('subprocess.run')
-    def test_gum_error(self, mock_run):
-        """Should return False when gum command fails."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, 'gum')
-
-        assert is_gum_available() is False
-
-
-class TestPromptForParameter:
-    """Test single parameter prompting."""
-
-    @patch('subprocess.run')
-    def test_prompt_required_parameter(self, mock_run):
-        """Should prompt for required parameter."""
-        mock_run.return_value = Mock(stdout="Alice\n", returncode=0)
-
-        param_info = {
-            'name': 'username',
-            'type': 'str',
-            'required': True,
-            'default': None
-        }
-
-        result = prompt_for_parameter(param_info)
-        assert result == "Alice"
-
-        # Check gum was called correctly
-        call_args = mock_run.call_args
-        assert 'gum' in call_args[0][0]
-        assert 'input' in call_args[0][0]
-
-    @patch('subprocess.run')
-    def test_prompt_optional_parameter(self, mock_run):
-        """Should show default for optional parameter."""
-        mock_run.return_value = Mock(stdout="30\n", returncode=0)
-
-        param_info = {
-            'name': 'age',
-            'type': 'int',
-            'required': False,
-            'default': 25
-        }
-
-        result = prompt_for_parameter(param_info)
-        assert result == "30"
-
-        # Check that default value was passed to gum
-        call_args = mock_run.call_args
-        cmd = call_args[0][0]
-        assert '--value' in cmd
-        assert '25' in cmd
-
-    @patch('subprocess.run')
-    def test_prompt_empty_with_default(self, mock_run):
-        """Should use default when user provides empty input."""
-        mock_run.return_value = Mock(stdout="\n", returncode=0)
-
-        param_info = {
-            'name': 'port',
-            'type': 'int',
-            'required': False,
-            'default': 8080
-        }
-
-        result = prompt_for_parameter(param_info)
-        assert result == "8080"
-
-    @patch('subprocess.run')
-    @patch('sys.exit')
-    def test_prompt_cancelled(self, mock_exit, mock_run):
-        """Should exit gracefully when user cancels."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, 'gum')
-
-        param_info = {
-            'name': 'test',
-            'type': 'str',
-            'required': True,
-            'default': None
-        }
-
-        prompt_for_parameter(param_info)
-        mock_exit.assert_called_once_with(0)
-
-
-class TestPromptForBoolean:
-    """Test boolean parameter prompting."""
-
-    @patch('subprocess.run')
-    def test_prompt_boolean_true(self, mock_run):
-        """Should handle True selection."""
-        mock_run.return_value = Mock(stdout="True\n", returncode=0)
-
-        param_info = {
-            'name': 'enabled',
-            'type': 'bool',
-            'required': False,
-            'default': True
-        }
-
-        result = prompt_for_boolean(param_info)
-        assert result == "True"
-
-        # Check gum choose was called
-        call_args = mock_run.call_args
-        cmd = call_args[0][0]
-        assert 'gum' in cmd
-        assert 'choose' in cmd
-        assert 'True' in cmd
-        assert 'False' in cmd
-
-    @patch('subprocess.run')
-    def test_prompt_boolean_false(self, mock_run):
-        """Should handle False selection."""
-        mock_run.return_value = Mock(stdout="False\n", returncode=0)
-
-        param_info = {
-            'name': 'debug',
-            'type': 'bool',
-            'required': False,
-            'default': False
-        }
-
-        result = prompt_for_boolean(param_info)
-        assert result == "False"
-
-    @patch('subprocess.run')
-    def test_prompt_boolean_cancelled(self, mock_run):
-        """Should use default when cancelled."""
-        mock_run.side_effect = subprocess.CalledProcessError(1, 'gum')
-
-        param_info = {
-            'name': 'active',
-            'type': 'bool',
-            'required': False,
-            'default': True
-        }
-
-        result = prompt_for_boolean(param_info)
-        assert result == "True"
+    @patch('smpub.interactive.App', None)
+    def test_textual_not_available(self):
+        """Should return False when textual is not imported."""
+        from smpub.interactive import is_textual_available as check
+        assert check() is False
 
 
 class TestPromptForParameters:
-    """Test prompting for all method parameters."""
+    """Test parameter prompting with Textual."""
 
-    def sample_method(self, name: str, age: int = 25, active: bool = True):
-        """Sample method for testing."""
-        pass
-
-    @patch('smpub.interactive.is_gum_available')
-    def test_gum_not_available(self, mock_is_available):
-        """Should exit with error message when gum not available."""
-        mock_is_available.return_value = False
-
-        with pytest.raises(SystemExit) as exc_info:
-            prompt_for_parameters(self.sample_method)
-
-        assert exc_info.value.code == 1
-
-    @patch('smpub.interactive.is_gum_available')
-    @patch('smpub.interactive.prompt_for_parameter')
-    @patch('smpub.interactive.prompt_for_boolean')
-    def test_prompt_all_parameters(
-        self, mock_bool_prompt, mock_param_prompt, mock_is_available
-    ):
-        """Should prompt for all parameters in order."""
-        mock_is_available.return_value = True
-        mock_param_prompt.side_effect = ["Alice", "30"]
-        mock_bool_prompt.return_value = "True"
-
-        result = prompt_for_parameters(self.sample_method)
-
-        assert result == ["Alice", "30", "True"]
-        assert mock_param_prompt.call_count == 2
-        assert mock_bool_prompt.call_count == 1
-
-    @patch('smpub.interactive.is_gum_available')
-    def test_no_parameters(self, mock_is_available):
-        """Should handle methods with no parameters."""
-        mock_is_available.return_value = True
-
-        def no_params_method():
+    @patch('smpub.interactive.is_textual_available', return_value=False)
+    @patch('sys.exit', side_effect=SystemExit(1))
+    def test_textual_not_available(self, mock_exit, mock_available):
+        """Should exit when textual is not available."""
+        def dummy_method(name: str):
             pass
 
-        result = prompt_for_parameters(no_params_method)
+        with pytest.raises(SystemExit):
+            prompt_for_parameters(dummy_method)
+        mock_exit.assert_called_once_with(1)
+
+    @patch('smpub.interactive.ParameterForm')
+    @patch('smpub.interactive.get_parameter_info')
+    def test_no_parameters(self, mock_get_params, mock_form_class):
+        """Should return empty list when no parameters."""
+        # Mock get_parameter_info to return empty list
+        mock_get_params.return_value = []
+
+        def dummy_method():
+            pass
+
+        result = prompt_for_parameters(dummy_method)
         assert result == []
+        # Form should not be created if no parameters
+        mock_form_class.assert_not_called()
 
-    @patch('smpub.interactive.is_gum_available')
-    @patch('smpub.interactive.prompt_for_parameter')
-    @patch('smpub.interactive.prompt_for_boolean')
-    def test_mixed_types(self, mock_bool, mock_param, mock_is_available):
-        """Should use appropriate prompt for each type."""
-        mock_is_available.return_value = True
-        mock_param.side_effect = ["test", "42", "3.14"]
-        mock_bool.side_effect = ["True", "False"]
+    @patch('smpub.interactive.ParameterForm')
+    @patch('smpub.interactive.get_parameter_info')
+    def test_prompt_all_parameters(self, mock_get_params, mock_form_class):
+        """Should prompt for all parameters and return results."""
+        # Mock parameter info
+        params = [
+            {'name': 'name', 'type': 'str', 'required': True, 'default': None},
+            {'name': 'age', 'type': 'int', 'required': True, 'default': None},
+            {'name': 'active', 'type': 'bool', 'required': True, 'default': None}
+        ]
+        mock_get_params.return_value = params
 
-        def mixed_method(
-            text: str,
-            number: int,
-            decimal: float,
-            flag1: bool,
-            flag2: bool = False
-        ):
+        # Mock the form instance
+        mock_form = Mock()
+        mock_form.cancelled = False
+        mock_form.values = {
+            'name': 'Alice',
+            'age': '30',
+            'active': True
+        }
+        mock_form.run = Mock()  # Mock the run method
+        mock_form_class.return_value = mock_form
+
+        def dummy_method(name: str, age: int, active: bool):
             pass
 
-        result = prompt_for_parameters(mixed_method)
+        result = prompt_for_parameters(dummy_method)
+        assert result == ['Alice', '30', 'True']
+        mock_form.run.assert_called_once()
 
-        # Should call param prompt for non-bool types
-        assert mock_param.call_count == 3
-        # Should call bool prompt for bool types
-        assert mock_bool.call_count == 2
-        # Results in correct order
-        assert result == ["test", "42", "3.14", "True", "False"]
+    @patch('smpub.interactive.ParameterForm')
+    @patch('smpub.interactive.get_parameter_info')
+    def test_mixed_types(self, mock_get_params, mock_form_class):
+        """Should handle mixed parameter types."""
+        # Mock parameter info
+        params = [
+            {'name': 'name', 'type': 'str', 'required': True, 'default': None},
+            {'name': 'count', 'type': 'int', 'required': False, 'default': '10'},
+            {'name': 'enabled', 'type': 'bool', 'required': False, 'default': 'True'}
+        ]
+        mock_get_params.return_value = params
+
+        # Mock the form instance
+        mock_form = Mock()
+        mock_form.cancelled = False
+        mock_form.values = {
+            'name': 'Bob',
+            'count': '42',
+            'enabled': False
+        }
+        mock_form.run = Mock()  # Mock the run method
+        mock_form_class.return_value = mock_form
+
+        def dummy_method(name: str, count: int = 10, enabled: bool = True):
+            pass
+
+        result = prompt_for_parameters(dummy_method)
+        assert result == ['Bob', '42', 'False']
+
+    @patch('smpub.interactive.ParameterForm')
+    @patch('smpub.interactive.get_parameter_info')
+    def test_optional_parameters_with_defaults(self, mock_get_params, mock_form_class):
+        """Should handle optional parameters with default values."""
+        # Mock parameter info
+        params = [
+            {'name': 'name', 'type': 'str', 'required': True, 'default': None},
+            {'name': 'port', 'type': 'int', 'required': False, 'default': '8080'}
+        ]
+        mock_get_params.return_value = params
+
+        # Mock the form instance with empty value for port (use default)
+        mock_form = Mock()
+        mock_form.cancelled = False
+        mock_form.values = {
+            'name': 'Charlie',
+            'port': ''  # Empty, should use default
+        }
+        mock_form.run = Mock()  # Mock the run method
+        mock_form_class.return_value = mock_form
+
+        def dummy_method(name: str, port: int = 8080):
+            pass
+
+        result = prompt_for_parameters(dummy_method)
+        assert result == ['Charlie', '8080']
+
+    @patch('smpub.interactive.ParameterForm')
+    @patch('smpub.interactive.get_parameter_info')
+    @patch('sys.exit', side_effect=SystemExit(0))
+    def test_cancelled(self, mock_exit, mock_get_params, mock_form_class):
+        """Should exit when user cancels."""
+        # Mock parameter info
+        params = [
+            {'name': 'name', 'type': 'str', 'required': True, 'default': None}
+        ]
+        mock_get_params.return_value = params
+
+        # Mock the form instance as cancelled
+        mock_form = Mock()
+        mock_form.cancelled = True
+        mock_form.values = {}
+        mock_form.run = Mock()  # Mock the run method
+        mock_form_class.return_value = mock_form
+
+        def dummy_method(name: str):
+            pass
+
+        with pytest.raises(SystemExit):
+            prompt_for_parameters(dummy_method)
+        mock_exit.assert_called_once_with(0)

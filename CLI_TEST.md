@@ -59,14 +59,16 @@ smpub calculator calc multiply 5.5
 smpub remove calculator
 ```
 
-## Test Interactive Mode (se gum installato)
+## Test Interactive Mode (se questionary installato)
 
 ```bash
-# Installa gum (se non già installato)
-brew install gum
+# Installa questionary (se non già installato)
+pip install questionary  # macOS
+# oppure
+pip install questionary  # Debian/Ubuntu
 
-# NOTA: In zsh, quota le parentesi quadre
-pip install 'smpub[gum]'
+# Installa smpub
+pip install smpub
 
 # Registra l'app se non già fatto
 smpub add calculator --path ./examples
@@ -292,14 +294,14 @@ rm -f .published ~/.smartlibs/publisher/registry.json
 # Se HTTP mode non parte (NOTA: quota in zsh!)
 pip install '.[http]'
 
-# Se interactive mode non parte (NOTA: quota in zsh!)
-pip install '.[gum]'
+# Se interactive mode non parte
+pip install questionary  # macOS
+pip install questionary  # Debian/Ubuntu
 
 # Check Python path
 python -c "import smpub; print(smpub.__file__)"
 
 # Errore "zsh: no matches found" - SEMPRE quota le parentesi quadre in zsh
 pip install 'smpub[http]'
-pip install 'smpub[gum]'
 pip install '.[dev]'
 ```

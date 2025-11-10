@@ -9,17 +9,20 @@ smpub follows a clean layered architecture that separates concerns and provides 
 ```mermaid
 graph TB
     App["Your Application<br/>(inherits from Publisher)"]
-    Publisher["Publisher Layer<br/>• parent_api (root Switcher)<br/>• CLI/OpenAPI exposure control<br/>• Argument validation (Pydantic)<br/>• Interactive mode support (gum)<br/>• HTTP server (FastAPI)"]
-    Handlers["Handler Instances<br/>(inherit from PublishedClass)<br/>• api = Switcher(prefix='...')<br/>• publisher: PublisherContext<br/>• Business logic methods"]
+    Publisher["Publisher Layer<br/>• parent_api (root Switcher)<br/>• CLI/OpenAPI exposure control<br/>• Argument validation (Pydantic)<br/>• Interactive mode support (Textual)<br/>• HTTP server (FastAPI)"]
+    Handlers["Handler Instances<br/>(inherit from PublishedClass)<br/>• api = ApiSwitcher(prefix='...')<br/>• publisher: PublisherContext<br/>• Business logic methods"]
+    ApiSwitcher["ApiSwitcher<br/>• Extends SmartSwitch Switcher<br/>• Creates Pydantic models at decoration time<br/>• Enables OpenAPI schema generation"]
     SmartSwitch["SmartSwitch Core<br/>• Parent-child relationships<br/>• Method dispatch by name/rules<br/>• Hierarchical API navigation"]
 
     App -->|"initialize() / publish()"| Publisher
     Publisher -->|"publishes to"| Handlers
-    Handlers -->|"dispatches via"| SmartSwitch
+    Handlers -->|"uses"| ApiSwitcher
+    ApiSwitcher -->|"extends"| SmartSwitch
 
     style App fill:#e1f5ff
     style Publisher fill:#fff4e1
     style Handlers fill:#e8f5e9
+    style ApiSwitcher fill:#ffe0b2
     style SmartSwitch fill:#f3e5f5
 ```
 
@@ -53,13 +56,18 @@ graph TB
 - Allow handlers to use `__slots__` for memory efficiency
 
 **Usage**:
+
 ```python
+from smpub.apiswitcher import ApiSwitcher
+
 class MyHandler(PublishedClass):
     __slots__ = ('data',)  # Your slots
-    api = Switcher(prefix='my_')
+    api = ApiSwitcher(prefix='my_')  # Use ApiSwitcher for HTTP support
 
     # publisher slot provided by PublishedClass
 ```
+
+**Note**: For HTTP/OpenAPI exposure, handlers must use `ApiSwitcher` instead of plain `Switcher`. See [ApiSwitcher](#apiswitcher) section for details.
 
 ### PublisherContext
 
@@ -80,6 +88,62 @@ def my_method(self):
     schema = self.publisher.get_api_json()
 ```
 
+### ApiSwitcher
+
+**Role**: Enhanced Switcher with OpenAPI support
+
+**Problem Solved**:
+When using standard `Switcher` with FastAPI, the OpenAPI schema doesn't show method parameters because FastAPI relies on introspection of Pydantic models at **app creation time**. Creating models dynamically at runtime results in invisible parameters in Swagger UI.
+
+**Solution**:
+`ApiSwitcher` creates Pydantic models at **decoration time** (when the class is defined), making them available for FastAPI's introspection during app creation.
+
+**Key Features**:
+
+- Extends `smartswitch.Switcher`
+- Creates Pydantic models when methods are decorated
+- Stores models in `_pydantic_models` dict
+- Required for HTTP/OpenAPI exposure
+
+**Responsibilities**:
+
+- Create Pydantic model for each decorated method
+- Handle type conversions (Literal → Enum for Pydantic)
+- Store models for retrieval by FastAPI integration
+- Provide `get_pydantic_model(method_name)` for model access
+
+**Usage**:
+```python
+from smpub.apiswitcher import ApiSwitcher
+
+class MyHandler(PublishedClass):
+    api = ApiSwitcher(prefix='my_')  # Required for HTTP mode
+
+    @api
+    def my_method(self, name: str, age: int) -> str:
+        """Method with automatic Pydantic model creation."""
+        return f"{name} is {age} years old"
+```
+
+**Model Creation Process**:
+
+1. Method decorated with `@api`
+2. ApiSwitcher introspects method signature
+3. Creates Pydantic model from type hints
+4. Stores model in `_pydantic_models[method_name]`
+5. Model available for FastAPI at app creation time
+
+**Type Support**:
+
+- Basic types: `str`, `int`, `float`, `bool`
+- Optional types with defaults
+- `Literal` types (converted to Enum)
+- Complex types (list, dict, etc.)
+
+**Requirement**:
+
+When using HTTP mode (`smpub <app> serve`), handlers **must** use `ApiSwitcher` instead of plain `Switcher`. If not, a `TypeError` is raised with a clear message.
+
 ## Data Flow
 
 ### CLI Mode Flow
@@ -88,9 +152,9 @@ def my_method(self):
 graph LR
     CLI[Command Line] --> Parse[Parse: handler method args]
     Parse --> Interactive{Interactive?}
-    Interactive -->|Yes| Gum[gum prompts]
+    Interactive -->|Yes| Textual[Textual TUI form]
     Interactive -->|No| Pydantic[Pydantic validation]
-    Gum --> Pydantic
+    Textual --> Pydantic
     Pydantic --> Dispatch[SmartSwitch dispatch]
     Dispatch --> Method[Execute method]
     Method --> Result[Print result]
@@ -145,35 +209,38 @@ def add(self, a: int, b: int) -> int:
 
 ## Interactive Layer
 
-### gum Integration
+### Textual Integration
 
-Optional layer for user-friendly parameter input:
+Optional layer for user-friendly parameter input using Textual TUI framework:
 
-1. **Type-aware Prompts**: Different prompts for different types
-2. **Default Display**: Show default values
-3. **Boolean Choices**: Menu selection for bool params
-4. **Validation**: Validate before execution
+1. **Type-aware Prompts**: Different input widgets for different types
+2. **Default Display**: Show default values in forms
+3. **Boolean Choices**: Checkbox or switch for bool params
+4. **Validation**: Real-time validation with visual feedback
+5. **Rich UI**: Modern terminal UI with colors and interactive elements
 
 **Flow**:
 
 ```mermaid
 graph TB
-    Start[--interactive flag] --> Check{gum available?}
-    Check -->|No| Error[Error: gum not installed]
-    Check -->|Yes| Loop[For each parameter]
-    Loop --> ParamType{Parameter type?}
-    ParamType -->|bool| Choose[gum choose True/False]
-    ParamType -->|other| Input[gum input with prompt]
-    Choose --> Collect[Collect string args]
-    Input --> Collect
-    Collect --> More{More params?}
-    More -->|Yes| Loop
-    More -->|No| Validate[Pydantic validation]
-    Validate --> Execute[Execute method]
+    Start[--interactive flag] --> Check{Textual available?}
+    Check -->|No| Error[Error: Textual not installed]
+    Check -->|Yes| App[Launch Textual app]
+    App --> Form[Display parameter form]
+    Form --> Input[User fills parameters]
+    Input --> Validate[Real-time validation]
+    Validate --> Invalid{Valid?}
+    Invalid -->|No| Error2[Show validation errors]
+    Error2 --> Input
+    Invalid -->|Yes| Submit[User submits form]
+    Submit --> Execute[Execute method]
+    Execute --> Result[Show result in UI]
 
     style Start fill:#e3f2fd
     style Error fill:#ffcdd2
+    style Error2 fill:#ffcdd2
     style Execute fill:#c8e6c9
+    style Result fill:#fff9c4
 ```
 
 ## HTTP Layer
@@ -207,6 +274,63 @@ sequenceDiagram
     FastAPI-->>Client: {"status": "success", "result": ...}
 ```
 
+### CLI Command: `smpub <app> serve`
+
+The `serve` command provides an easy way to start the HTTP server from the command line:
+
+**Syntax**:
+```bash
+smpub <appname> serve [port]
+```
+
+**Default Port**: 8000
+
+**Example**:
+```bash
+# Start on default port 8000
+smpub mailapp serve
+
+# Start on custom port
+smpub mailapp serve 8084
+```
+
+**Flow**:
+
+```mermaid
+graph LR
+    CLI[smpub mailapp serve 8084] --> Parse[Parse command]
+    Parse --> Load[Load app from registry]
+    Load --> Check{ApiSwitcher?}
+    Check -->|No| Error[TypeError: Handlers must use ApiSwitcher]
+    Check -->|Yes| Create[Create FastAPI app]
+    Create --> Routes[Generate routes from handlers]
+    Routes --> Home[Add homepage with links]
+    Home --> Start[Start uvicorn on port 8084]
+    Start --> Ready[Server ready]
+
+    style CLI fill:#e3f2fd
+    style Error fill:#ffcdd2
+    style Ready fill:#c8e6c9
+```
+
+**Available Endpoints**:
+
+- `/` - Homepage with links to documentation
+- `/docs` - Swagger UI (interactive API testing)
+- `/redoc` - ReDoc (alternative documentation)
+- `/openapi.json` - OpenAPI schema
+- `/{handler}/{method}` - API endpoints (POST)
+
+**Homepage Features**:
+
+The homepage provides a user-friendly entry point with:
+
+- Application name and description
+- Clickable links to Swagger UI and ReDoc
+- Link to download OpenAPI JSON schema
+- Modern HTML design with styling
+- Easy navigation for developers
+
 ## Registry System
 
 ### Local Registry (`.published`)
@@ -230,8 +354,9 @@ System-wide app registry:
 - **Handlers**: Business logic only
 - **Publisher**: Orchestration and exposure
 - **Validation**: Separate Pydantic layer
-- **Interactive**: Optional gum layer
+- **Interactive**: Optional Textual TUI layer
 - **HTTP**: Separate FastAPI layer
+- **ApiSwitcher**: Decoration-time Pydantic model creation
 
 ### 2. Convention over Configuration
 
@@ -244,9 +369,10 @@ System-wide app registry:
 
 - Core: CLI with basic arguments
 - +Pydantic: Type validation
-- +gum: Interactive mode
+- +Textual: Interactive TUI mode
+- +ApiSwitcher: OpenAPI schema support
 - +FastAPI: HTTP/API mode
-- Each layer is optional
+- Each layer is optional (except ApiSwitcher when using HTTP)
 
 ### 4. SmartSwitch Foundation
 
@@ -282,14 +408,19 @@ app = create_fastapi_app(publisher)
 app.get("/health")(lambda: {"status": "ok"})
 ```
 
-### Custom Interactive Prompts
+### Custom Interactive Forms
 
-Extend interactive module:
+Extend interactive module with custom Textual widgets:
 
 ```python
-from smpub.interactive import prompt_for_parameter
+from smpub.interactive import InteractiveApp
+from textual.widgets import Input, Button
 
-# Custom prompt logic
+# Create custom Textual app
+class CustomInteractiveApp(InteractiveApp):
+    def create_form(self):
+        # Custom form logic with Textual widgets
+        pass
 ```
 
 ## Performance Considerations

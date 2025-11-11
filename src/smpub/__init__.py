@@ -30,5 +30,5 @@ from smpub.publisher import Publisher
 from smpub.published import PublishedClass, PublisherContext, discover_api_json
 from smpub.apiswitcher import ApiSwitcher
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = ["Publisher", "PublishedClass", "PublisherContext", "discover_api_json", "ApiSwitcher"]

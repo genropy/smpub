@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smpub"
-version = "0.1.0"
+version = "0.2.0"
 description = "Smart Publisher - CLI/API framework based on SmartSwitch"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,6 +27,7 @@ classifiers = [
 
 dependencies = [
     "smartswitch>=0.4.0",
+    "smartasync>=0.1.0",
     "pydantic>=2.0",
 ]
 

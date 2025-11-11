@@ -137,7 +137,14 @@ def create_fastapi_app(
                         for key, value in params_dict.items():
                             if isinstance(value, Enum):
                                 params_dict[key] = value.value
+
+                        # Call method - smartasync handles async/sync automatically
+                        # If method is async, smartasync detects event loop and returns coroutine
                         result = method_ref(**params_dict)
+                        # If result is coroutine, await it
+                        if inspect.iscoroutine(result):
+                            result = await result
+
                         return {"result": result}
                     except ValidationError as e:
                         raise HTTPException(status_code=422, detail=str(e))
@@ -160,7 +167,12 @@ def create_fastapi_app(
             def make_simple_endpoint(method_ref):
                 async def endpoint():
                     try:
+                        # Call method - smartasync handles async/sync automatically
                         result = method_ref()
+                        # If result is coroutine, await it
+                        if inspect.iscoroutine(result):
+                            result = await result
+
                         return {"result": result}
                     except Exception as e:
                         raise HTTPException(status_code=500, detail=str(e))

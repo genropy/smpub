@@ -26,19 +26,36 @@ class ApiSwitcher(Switcher):
     This class extends smartswitch.Switcher to generate Pydantic models at
     decoration time, making them available for FastAPI OpenAPI schema generation.
 
+    Async Support:
+        ApiSwitcher automatically wraps async methods with @smartasync, enabling
+        transparent sync/async calling. The same method works in both contexts:
+        - CLI calls it synchronously (no await needed)
+        - HTTP/FastAPI calls it asynchronously (with await)
+
     Usage:
         class MyHandler(PublishedClass):
             api = ApiSwitcher(prefix='my_')
 
             @api
-            def my_method(self, name: str, age: int = 25):
-                '''Method with parameters.
+            def sync_method(self, name: str, age: int = 25):
+                '''Synchronous method with parameters.
 
                 Args:
                     name: User's name
                     age: User's age
                 '''
-                pass
+                return f"Hello {name}, age {age}"
+
+            @api
+            async def async_method(self, url: str):
+                '''Async method - automatically wrapped with @smartasync.
+
+                Args:
+                    url: URL to fetch
+                '''
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(url)
+                    return response.json()
 
     The generated Pydantic models are stored internally and can be retrieved
     via get_pydantic_model(method_name).
@@ -58,21 +75,38 @@ class ApiSwitcher(Switcher):
         """
         Decorate method and create Pydantic model.
 
+        Automatically wraps async methods with @smartasync for transparent
+        sync/async support. This allows the same method to be called:
+        - Without await in CLI context (sync mode)
+        - With await in HTTP/FastAPI context (async mode)
+
         Args:
             func: Function to decorate
 
         Returns:
             Decorated function
         """
-        # Call parent to register method
-        decorated = super().__call__(func)
+        import asyncio
+        from smartasync import smartasync
 
-        # Create Pydantic model for this method
+        # Apply smartasync to async methods BEFORE parent registration
+        # This enables transparent sync/async calling
+        if asyncio.iscoroutinefunction(func):
+            wrapped_func = smartasync(func)
+        else:
+            wrapped_func = func
+
+        # Call parent to register the wrapped function
+        decorated = super().__call__(wrapped_func)
+
+        # Create Pydantic model for the ORIGINAL function (not wrapped)
+        # because we need the original signature
         if create_model is not None:
             model = self._create_pydantic_model(func)
             if model is not None:
                 self._pydantic_models[func.__name__] = model
 
+        # Return the wrapped function so it replaces the original method
         return decorated
 
     def _create_pydantic_model(self, func) -> Optional[Any]:

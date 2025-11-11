@@ -18,7 +18,7 @@ Then: "Can we add the third one too?"
 
 ## Previously, on SmartSwitch...
 
-In [our previous article](./smartswitch/WHY_SMARTSWITCH.md), we explored SmartSwitch as a standard dispatch pattern for your toolkit. We established that:
+In our previous article on SmartSwitch (see [SmartSwitch documentation](https://github.com/genropy/smartswitch)), we explored SmartSwitch as a standard dispatch pattern for your toolkit. We established that:
 
 - **SmartSwitch organizes functions** with decorator-based registration
 - **Three dispatch modes**: by-name, by-type (typerule), by-value (valrule)
@@ -520,7 +520,7 @@ If you remember nothing else:
 
 This completes our two-part series on building consistent developer toolkits:
 
-**Part 1**: [Why SmartSwitch?](./smartswitch/WHY_SMARTSWITCH.md) - Standard dispatch patterns
+**Part 1**: [Why SmartSwitch?](https://github.com/genropy/smartswitch) - Standard dispatch patterns
 **Part 2**: Why smpub? (this article) - Dual CLI/API interfaces
 
 **The pattern works**:
@@ -543,4 +543,4 @@ This completes our two-part series on building consistent developer toolkits:
 
 ---
 
-*Found this helpful? Questions? Leave a comment below. Want to see smpub in action? Check out the [examples directory](./examples/) for complete working demos.*
+*Found this helpful? Questions? Leave a comment below. Want to see smpub in action? Check out the [examples](../examples/index.md) for complete working demos.*

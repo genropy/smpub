@@ -46,7 +46,7 @@ def create_fastapi_app(publisher, **kwargs) -> FastAPI:
         handler_name = handler_info["name"]
 
         # Get API schema
-        api_schema = handler.publisher.get_api_json()
+        api_schema = handler.smpublisher.get_api_json()
 
         # Create routes for each method
         for method_name, method_info in api_schema["methods"].items():
@@ -126,12 +126,21 @@ def _create_route(
             # Validate using existing Pydantic validation
             validated_params = validate_args(method, args)
 
-            # Execute method
+            # Execute method (await if needed, smartasync methods return coroutines in async context)
             result = method(**validated_params)
+
+            # Check if result is a coroutine and await it
+            import inspect
+
+            if inspect.iscoroutine(result):
+                result = await result
 
             # Return result
             return JSONResponse(content={"status": "success", "result": result})
 
+        except HTTPException:
+            # Re-raise HTTPException as-is (don't wrap it)
+            raise
         except ValidationError as e:
             raise HTTPException(
                 status_code=422,

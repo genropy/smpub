@@ -47,7 +47,8 @@ Thumbs.db
 .published
 *.log
 
-# MkDocs
-site/
+# Documentation
+site/  # MkDocs (legacy)
+docs/_build/  # Sphinx build output
 
 # Test

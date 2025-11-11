@@ -99,11 +99,62 @@ open http://localhost:8000/docs
 
 ## Documentation
 
-- [Getting Started](user-guide/installation.md) - Installation and setup
-- [Publishing Guide](user-guide/publishing-guide.md) - How to expose your library
-- [User Guide](guide/publisher.md) - Complete usage guide
-- [Examples](examples/index.md) - Working examples
-- [API Reference](api/publisher.md) - API documentation
+```{toctree}
+:maxdepth: 2
+:caption: User Guide
+
+user-guide/installation
+user-guide/quickstart
+user-guide/publishing-guide
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Guides
+
+guide/publisher
+guide/handlers
+guide/cli-mode
+guide/http-mode
+guide/validation
+guide/interactive
+guide/best-practices
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Examples
+
+examples/index
+examples/calculator
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: API Reference
+
+api/publisher
+api/published
+api/http
+api/interactive
+api/validation
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Appendix
+
+appendix/architecture
+appendix/smartswitch
+philosophy/why-smpub
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Publishing
+
+publishing-guide
+```
 
 ## Part of Genro-Libs Family
 

@@ -718,9 +718,9 @@ dataapp data transform --interactive
 
 **Next Steps**:
 
-- Read the [Architecture documentation](../README.md#architecture)
-- Check [test_publisher.py](../tests/test_publisher.py) for examples
-- See [examples/](../examples/) for working code
+- Read the [Architecture documentation](../appendix/architecture.md)
+- Check the test files for implementation examples
+- See [examples](../examples/index.md) for working code
 
 ---
 

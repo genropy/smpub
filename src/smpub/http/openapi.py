@@ -39,7 +39,7 @@ def generate_openapi_schema(
         handler = handler_info["handler"]
 
         # Get API schema from handler
-        api_schema = handler.publisher.get_api_json()
+        api_schema = handler.smpublisher.get_api_json()
 
         # Generate paths for each method
         for method_name, method_info in api_schema["methods"].items():

@@ -132,16 +132,16 @@ class TestPublishedClass:
         """Should have publisher slot available."""
         handler = SimpleHandler()
         assert hasattr(handler, '__slots__')
-        # Check that PublishedClass provides publisher slot
-        assert 'publisher' in PublishedClass.__slots__
+        # Check that PublishedClass provides smpublisher slot
+        assert 'smpublisher' in PublishedClass.__slots__
 
-    def test_publisher_attribute_assignable(self):
-        """Should allow publisher attribute assignment."""
+    def test_smpublisher_attribute_assignable(self):
+        """Should allow smpublisher attribute assignment."""
         handler = SimpleHandler()
         context = PublisherContext(handler)
-        handler.publisher = context
+        handler.smpublisher = context
 
-        assert handler.publisher is context
+        assert handler.smpublisher is context
 
 
 class TestPublisher:
@@ -156,12 +156,12 @@ class TestPublisher:
         assert app.parent_api.name == 'root'  # Default name is 'root'
 
     def test_publish_handler(self):
-        """Should publish handler and inject publisher context."""
+        """Should publish handler and inject smpublisher context."""
         app = TestApp()
 
-        # Handler should have publisher attribute
-        assert hasattr(app.simple, 'publisher')
-        assert isinstance(app.simple.publisher, PublisherContext)
+        # Handler should have smpublisher attribute
+        assert hasattr(app.simple, 'smpublisher')
+        assert isinstance(app.simple.smpublisher, PublisherContext)
 
         # Handler's API should have parent set
         assert app.simple.__class__.api.parent is app.parent_api

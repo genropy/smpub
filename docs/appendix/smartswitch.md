@@ -8,7 +8,7 @@ smpub is built on top of [SmartSwitch](https://github.com/genropy/smartswitch), 
 
 smpub creates a hierarchical API structure using SmartSwitch's parent-child relationships:
 
-```python
+```text
 Publisher                    # Your app
   └─ parent_api (Switcher)  # Root API
       └─ Handler.api         # Handler API (child)
@@ -214,7 +214,7 @@ info = handler.__class__.api.get_method_info('create')
 
 Parent-child relationships enable nested APIs:
 
-```python
+```text
 # Root API
 app.parent_api
     └─ users.api        # /users/*

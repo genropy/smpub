@@ -113,7 +113,7 @@ class PublisherContext:
     """
     Context object providing publisher-related functionality to handlers.
 
-    This object is injected into handlers via the 'publisher' attribute
+    This object is injected into handlers via the 'smpublisher' attribute
     and provides access to publisher features without polluting the
     handler's namespace.
     """
@@ -143,7 +143,7 @@ class PublisherContext:
             Dictionary containing API schema with methods, parameters, etc.
 
         Example:
-            >>> schema = handler.publisher.get_api_json()
+            >>> schema = handler.smpublisher.get_api_json()
             >>> print(schema['methods']['add']['parameters'])
             [{'name': 'key', 'type': 'str', 'required': True, 'default': None}]
         """
@@ -156,9 +156,9 @@ class PublishedClass:
     """
     Optional mixin for handlers that use __slots__.
 
-    This class only adds a 'publisher' slot. If your handler doesn't use
+    This class only adds a 'smpublisher' slot. If your handler doesn't use
     __slots__, you don't need to inherit from this class - the Publisher
-    will inject the 'publisher' attribute dynamically.
+    will inject the 'smpublisher' attribute dynamically.
 
     Example with __slots__:
         class MyHandler(PublishedClass):
@@ -185,4 +185,4 @@ class PublishedClass:
                 self.data[key] = None
     """
 
-    __slots__ = ("publisher",)
+    __slots__ = ("smpublisher",)

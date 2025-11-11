@@ -77,12 +77,70 @@ class Publisher:
         Raises:
             TypeError: If target_object uses __slots__ but doesn't inherit from PublishedClass
         """
+        # Auto-upgrade plain Switcher to ApiSwitcher (Issue #5)
+        # This allows users to use plain smartswitch.Switcher without changing imports
+        # when they want to publish with smpub
+        if hasattr(target_object.__class__, "api"):
+            handler_api = target_object.__class__.api
+
+            # Check if it's a plain Switcher (not already ApiSwitcher)
+            from smartswitch import Switcher
+            from .apiswitcher import ApiSwitcher
+
+            if isinstance(handler_api, Switcher) and not isinstance(handler_api, ApiSwitcher):
+                # Create ApiSwitcher with same configuration
+                api_switcher = ApiSwitcher(prefix=handler_api.prefix)
+
+                # Copy registered handlers from plain Switcher
+                api_switcher._handlers = handler_api._handlers.copy()
+
+                # Generate Pydantic models retroactively for already-decorated methods
+                # This is necessary because methods were decorated with plain Switcher,
+                # but now we need Pydantic models for FastAPI integration
+                from smartasync import smartasync
+
+                for method_key in handler_api._handlers.keys():
+                    # Reconstruct full method name with prefix
+                    full_method_name = (
+                        f"{handler_api.prefix}{method_key}" if handler_api.prefix else method_key
+                    )
+
+                    # Get the original method from handler class
+                    if hasattr(target_object.__class__, full_method_name):
+                        original_method = getattr(target_object.__class__, full_method_name)
+
+                        # Check if method already has smartasync wrapper
+                        # If not, apply it now for bidirectional sync/async support
+                        if not hasattr(original_method, "_smartasync_reset_cache"):
+                            # Method not wrapped yet - wrap it with smartasync
+                            wrapped_method = smartasync(original_method)
+                            # Replace on class
+                            setattr(target_object.__class__, full_method_name, wrapped_method)
+                            # Update reference
+                            func_for_model = original_method
+                        else:
+                            # Already wrapped - use unwrapped version for Pydantic model
+                            func_for_model = (
+                                original_method.__wrapped__
+                                if hasattr(original_method, "__wrapped__")
+                                else original_method
+                            )
+
+                        # Generate Pydantic model from original (unwrapped) function
+                        if hasattr(api_switcher, "_create_pydantic_model"):
+                            model = api_switcher._create_pydantic_model(func_for_model)
+                            if model is not None:
+                                api_switcher._pydantic_models[method_key] = model
+
+                # Replace handler's api attribute with upgraded ApiSwitcher
+                target_object.__class__.api = api_switcher
+
         # Create and inject PublisherContext
         context = PublisherContext(target_object)
         context.parent_api = self.parent_api
 
         try:
-            target_object.publisher = context
+            target_object.smpublisher = context
         except AttributeError:
             raise TypeError(
                 f"Cannot publish {type(target_object).__name__}: "
@@ -240,11 +298,11 @@ class Publisher:
             print(f"Description: {handler_class.__doc__.strip()}\n")
 
         # Get API schema from handler
-        if not hasattr(handler, "publisher"):
+        if not hasattr(handler, "smpublisher"):
             print("No API methods available (handler not properly published)")
             return
 
-        schema = handler.publisher.get_api_json()
+        schema = handler.smpublisher.get_api_json()
 
         if not schema["methods"]:
             print("No API methods available")

@@ -24,7 +24,7 @@ class Publisher:
 
     Example:
         class MyApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.users = UserHandler()
                 self.publish('users', self.users,
                            cli=True, openapi=True,
@@ -45,7 +45,7 @@ class Publisher:
         2. PydanticPlugin - validates and creates models
         3. SmartasyncPlugin - handles sync/async (must be last)
 
-        Then calls initialize() hook.
+        Then calls on_init() hook if defined by subclass.
         """
         # Create root Switcher with plugins pre-configured in correct order
         self.parent_api = (
@@ -58,13 +58,36 @@ class Publisher:
         self._cli_handlers = {}
         self._openapi_handlers = {}
 
-        # Subclass MUST implement initialize()
-        if not hasattr(self, "initialize"):
-            raise NotImplementedError(
-                f"{self.__class__.__name__} must implement initialize() method"
-            )
+        # Call on_init() hook if defined by subclass
+        if hasattr(self, "on_init") and callable(self.on_init):
+            self.on_init()
+        else:
+            # No on_init() defined - publish default help handler
+            self._publish_default_help()
 
-        self.initialize()
+    def _publish_default_help(self):
+        """Publish a default help handler when no on_init() is defined."""
+        class DefaultHelp:
+            """Default help handler - shown when Publisher has no on_init()."""
+
+            def usage(self) -> dict:
+                """Show how to implement a Publisher subclass."""
+                return {
+                    "message": "This Publisher has no handlers published yet",
+                    "instructions": [
+                        "1. Override on_init() in your Publisher subclass",
+                        "2. Use self.publish(name, handler_instance) to publish handlers",
+                        "3. Example: self.publish('myhandler', MyHandler())"
+                    ],
+                    "example": """
+class MyPublisher(Publisher):
+    def on_init(self):
+        handler = MyHandler()
+        self.publish('myhandler', handler)
+"""
+                }
+
+        self.publish("help", DefaultHelp())
 
     def publish(
         self,

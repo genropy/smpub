@@ -58,30 +58,21 @@ def create_fastapi_app(
         # Get prefix if any
         prefix = getattr(switcher, "prefix", None) or ""
 
-        # Find all methods that can be called
-        for method_name in dir(handler):
-            # Skip private/special methods
-            if method_name.startswith("_"):
-                continue
+        # Get only registered methods from switcher (not all public methods)
+        entries = switcher.entries() if hasattr(switcher, "entries") else []
 
-            # Skip class attributes that aren't methods
-            attr = getattr(handler, method_name)
-            if not callable(attr):
-                continue
+        for method_key in entries:
+            # method_key is the display name (without prefix)
+            # Build full method name with prefix
+            full_method_name = f"{prefix}{method_key}" if prefix else method_key
+            api_method_name = method_key
 
-            # Skip if method doesn't match prefix
-            if prefix and not method_name.startswith(prefix):
+            # Check if method exists on handler
+            if not hasattr(handler, full_method_name):
                 continue
-
-            # Get actual method name (strip prefix)
-            api_method_name = method_name[len(prefix) :] if prefix else method_name
 
             # Get method
-            method = getattr(handler, method_name)
-
-            # Skip if not a real method
-            if not inspect.ismethod(method):
-                continue
+            method = getattr(handler, full_method_name)
 
             # Get Pydantic model from func._plugin_meta['pydantic']
             # This is prepared by PydanticPlugin during decoration via on_decorate() hook

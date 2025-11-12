@@ -47,15 +47,16 @@ def create_fastapi_app(
     for http_path, handler_info in publisher._openapi_handlers.items():
         handler = handler_info["handler"]
         handler_name = handler_info["name"]
+        switcher_name = handler_info["switcher_name"]
 
         # Get handler's Switcher
-        if not hasattr(handler.__class__, "api"):
+        if not hasattr(handler.__class__, switcher_name):
             continue
 
-        switcher = handler.__class__.api
+        switcher = getattr(handler.__class__, switcher_name)
 
         # Get prefix if any
-        prefix = switcher.prefix if hasattr(switcher, "prefix") else ""
+        prefix = getattr(switcher, "prefix", None) or ""
 
         # Find all methods that can be called
         for method_name in dir(handler):

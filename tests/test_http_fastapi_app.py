@@ -78,7 +78,7 @@ class TestFastAPIApp:
         """Should create FastAPI app from publisher."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -92,7 +92,7 @@ class TestFastAPIApp:
         """Should accept custom FastAPI configuration."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -113,7 +113,7 @@ class TestFastAPIApp:
         """Should create routes for all published methods."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -130,7 +130,7 @@ class TestFastAPIApp:
         """Should handle GET-like methods via POST."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -150,7 +150,7 @@ class TestFastAPIApp:
         """Should handle methods with optional parameters."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -175,7 +175,7 @@ class TestFastAPIApp:
         """Should handle async methods via HTTP."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -191,7 +191,7 @@ class TestFastAPIApp:
         """Should return 422 for missing required parameters."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -209,7 +209,7 @@ class TestFastAPIApp:
         """Should return 422 for validation errors."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -225,7 +225,7 @@ class TestFastAPIApp:
         """Should return 500 for method exceptions."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 
@@ -259,7 +259,7 @@ class TestFastAPIApp:
                 return f"H2: {value}"
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.h1 = Handler1()
                 self.h2 = Handler2()
                 self.publish("handler1", self.h1)
@@ -283,7 +283,7 @@ class TestFastAPIApp:
         """Should respect custom HTTP paths."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler, http_path="/api/v1/custom")
 
@@ -299,7 +299,7 @@ class TestFastAPIApp:
         """Should not expose handlers with openapi=False."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler, openapi=False)
 
@@ -323,7 +323,7 @@ class TestFastAPIApp:
                 return "No params!"
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("handler", self.handler)
 
@@ -347,7 +347,7 @@ class TestFastAPIApp:
         class TestApp(Publisher):
             """Test application for metadata."""
 
-            def initialize(self):
+            def on_init(self):
                 self.handler = TestHandler()
                 self.publish("handler", self.handler)
 

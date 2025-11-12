@@ -5,13 +5,14 @@ Utilities for publishable handlers and API discovery.
 import inspect
 
 
-def discover_api_json(target, recursive=False) -> dict:
+def discover_api_json(target, recursive=False, switcher_name='api') -> dict:
     """
     Discover API schema from a handler (class or instance).
 
     Args:
         target: Class or instance to discover
         recursive: If True, include nested handlers (not yet implemented)
+        switcher_name: Name of the Switcher class attribute (default: 'api')
 
     Returns:
         {
@@ -45,11 +46,11 @@ def discover_api_json(target, recursive=False) -> dict:
     }
 
     # Check if class has a Switcher API
-    if not hasattr(target_class, "api"):
+    if not hasattr(target_class, switcher_name):
         return result
 
-    switcher = target_class.api
-    prefix = switcher.prefix if hasattr(switcher, "prefix") else ""
+    switcher = getattr(target_class, switcher_name)
+    prefix = getattr(switcher, "prefix", None) or ""
 
     # Get all registered methods
     entries = switcher.entries() if hasattr(switcher, "entries") else []
@@ -118,17 +119,19 @@ class PublisherContext:
     handler's namespace.
     """
 
-    __slots__ = ("parent_api", "_handler")
+    __slots__ = ("parent_api", "_handler", "switcher_name")
 
-    def __init__(self, handler):
+    def __init__(self, handler, switcher_name='api'):
         """
         Initialize context for a handler.
 
         Args:
             handler: The handler instance this context is attached to
+            switcher_name: Name of the Switcher class attribute (default: 'api')
         """
         self._handler = handler
         self.parent_api = None
+        self.switcher_name = switcher_name
 
     def get_api_json(self, target=None, recursive=False) -> dict:
         """
@@ -149,4 +152,4 @@ class PublisherContext:
         """
         if target is None:
             target = self._handler
-        return discover_api_json(target, recursive=recursive)
+        return discover_api_json(target, recursive=recursive, switcher_name=self.switcher_name)

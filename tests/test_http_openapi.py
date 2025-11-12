@@ -102,7 +102,7 @@ class TestOpenAPISchema:
         """Should generate valid OpenAPI 3.0 schema structure."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -118,7 +118,7 @@ class TestOpenAPISchema:
         """Should use custom title, version, and description."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -135,7 +135,7 @@ class TestOpenAPISchema:
         """Should create path for each published method."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -154,7 +154,7 @@ class TestOpenAPISchema:
         """Should use POST method for all operations."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -169,7 +169,7 @@ class TestOpenAPISchema:
         """Should format operationId as handler_method."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -183,7 +183,7 @@ class TestOpenAPISchema:
         """Should use handler name as tag."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -197,7 +197,7 @@ class TestOpenAPISchema:
         """Should use method name as summary when no docstring in API."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -213,7 +213,7 @@ class TestOpenAPISchema:
         """Should use description from get_api_json()."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -228,7 +228,7 @@ class TestOpenAPISchema:
         """Should create request body for methods with parameters."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -244,7 +244,7 @@ class TestOpenAPISchema:
         """Should not create request body for methods without parameters."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -258,7 +258,7 @@ class TestOpenAPISchema:
         """Should mark required parameters correctly."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -273,7 +273,7 @@ class TestOpenAPISchema:
         """Should include default values for optional parameters."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 
@@ -326,7 +326,7 @@ class TestOpenAPISchema:
         """Should handle complex types (list, dict, Any) in schema."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = ComplexHandler()
                 self.publish("complex", self.handler)
 
@@ -368,7 +368,7 @@ class TestOpenAPISchema:
                 return value
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.h1 = Handler1()
                 self.h2 = Handler2()
                 self.publish("handler1", self.h1)
@@ -390,7 +390,7 @@ class TestOpenAPISchema:
         """Should not include handlers with openapi=False."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler, openapi=False)
 
@@ -404,7 +404,7 @@ class TestOpenAPISchema:
         """Should include standard response codes."""
 
         class TestApp(Publisher):
-            def initialize(self):
+            def on_init(self):
                 self.handler = SimpleHandler()
                 self.publish("simple", self.handler)
 

@@ -97,6 +97,7 @@ class MyPublisher(Publisher):
         openapi: bool = True,
         cli_name: str | None = None,
         http_path: str | None = None,
+        switcher_name: str = 'api',
     ):
         """
         Publish an object and register for CLI/OpenAPI exposure.
@@ -108,12 +109,13 @@ class MyPublisher(Publisher):
             openapi: Expose via OpenAPI/HTTP (default: True)
             cli_name: Custom CLI name (default: same as name)
             http_path: Custom HTTP path (default: /{name})
+            switcher_name: Name of the Switcher class attribute (default: 'api')
 
         Raises:
             TypeError: If target_object uses __slots__ but doesn't include 'smpublisher' slot
         """
         # Create and inject PublisherContext
-        context = PublisherContext(target_object)
+        context = PublisherContext(target_object, switcher_name=switcher_name)
         context.parent_api = self.parent_api
 
         try:
@@ -130,8 +132,8 @@ class MyPublisher(Publisher):
             ) from None
 
         # Link handler's API to parent_api for hierarchical structure
-        if hasattr(target_object.__class__, "api"):
-            handler_api = target_object.__class__.api
+        if hasattr(target_object.__class__, switcher_name):
+            handler_api = getattr(target_object.__class__, switcher_name)
             # Set parent to establish parent-child relationship
             # This automatically registers the child via SmartSwitch's parent.setter
             handler_api.parent = self.parent_api
@@ -145,10 +147,17 @@ class MyPublisher(Publisher):
         # Register for exposure with custom names/paths
         if cli:
             effective_cli_name = cli_name if cli_name is not None else name
-            self._cli_handlers[effective_cli_name] = target_object
+            self._cli_handlers[effective_cli_name] = {
+                "handler": target_object,
+                "switcher_name": switcher_name
+            }
         if openapi:
             effective_http_path = http_path if http_path is not None else f"/{name}"
-            self._openapi_handlers[effective_http_path] = {"handler": target_object, "name": name}
+            self._openapi_handlers[effective_http_path] = {
+                "handler": target_object,
+                "name": name,
+                "switcher_name": switcher_name
+            }
 
     def _ensure_plugins(self, handler_api):
         """
@@ -261,18 +270,20 @@ class MyPublisher(Publisher):
         else:
             method_args = args[2:]
 
-        # Get handler instance
-        handler = self._cli_handlers[handler_name]
+        # Get handler instance and switcher name
+        handler_info = self._cli_handlers[handler_name]
+        handler = handler_info["handler"]
+        switcher_name = handler_info["switcher_name"]
 
         # Get handler's Switcher
-        if not hasattr(handler.__class__, "api"):
-            print(f"Error: Handler '{handler_name}' has no API (missing 'api' class variable)")
+        if not hasattr(handler.__class__, switcher_name):
+            print(f"Error: Handler '{handler_name}' has no Switcher (missing '{switcher_name}' class variable)")
             sys.exit(1)
 
-        switcher = handler.__class__.api
+        switcher = getattr(handler.__class__, switcher_name)
 
         # Build full method name with prefix if needed
-        prefix = switcher.prefix if hasattr(switcher, "prefix") else ""
+        prefix = getattr(switcher, "prefix", None) or ""
         full_method_name = f"{prefix}{method_name}"
 
         # Check if method exists on handler
@@ -318,7 +329,7 @@ class MyPublisher(Publisher):
         print("  --interactive, -i  Prompt for parameters interactively (requires gum)\n")
         print("Available handlers:")
         for name in sorted(self._cli_handlers.keys()):
-            handler = self._cli_handlers[name]
+            handler = self._cli_handlers[name]["handler"]
             doc = handler.__class__.__doc__ or "No description"
             doc = doc.strip().split("\n")[0]  # First line only
             print(f"  {name:15} {doc}")
@@ -326,7 +337,7 @@ class MyPublisher(Publisher):
 
     def _print_handler_help(self, handler_name):
         """Print help for a specific handler."""
-        handler = self._cli_handlers[handler_name]
+        handler = self._cli_handlers[handler_name]["handler"]
         handler_class = handler.__class__
         prog_name = os.path.basename(sys.argv[0])
 

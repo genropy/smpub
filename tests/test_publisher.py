@@ -71,7 +71,7 @@ class TestApp(Publisher):
 
     __test__ = False  # Not a pytest test class
 
-    def initialize(self):
+    def on_init(self):
         self.simple = SimpleHandler()
         self.typed = TypedHandler()
         self.publish("simple", self.simple, cli=True, openapi=True)

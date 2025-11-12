@@ -13,8 +13,14 @@ To use Shop without smpub, see:
 - ../sample_shop/shop_usage.ipynb
 """
 
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import examples
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from smpub import Publisher
-from examples.sample_shop import Shop
+from examples.sample_shop.shop import Shop
 
 
 class PublishedShop(Publisher):
@@ -35,12 +41,15 @@ class PublishedShop(Publisher):
     def on_init(self):
         """Initialize and publish Shop components."""
         # Import and instantiate Shop - it's just a normal Python class
-        shop = Shop()
+        # Use a database file in the current directory
+        db_path = Path(__file__).parent / "shop.db"
+        shop = Shop(f'sqlite:{db_path}')
 
         # Publish table managers for CLI/HTTP access
-        self.publish("types", shop.types)
-        self.publish("articles", shop.articles)
-        self.publish("purchases", shop.purchases)
+        # Note: Table classes use 'dbop' instead of 'api' for their Switcher
+        self.publish("types", shop.db.table('types'), switcher_name='dbop')
+        self.publish("articles", shop.db.table('articles'), switcher_name='dbop')
+        self.publish("purchases", shop.db.table('purchases'), switcher_name='dbop')
 
 
 if __name__ == "__main__":

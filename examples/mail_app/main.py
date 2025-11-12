@@ -2,15 +2,14 @@
 """Mail service example with account management and sending."""
 
 from typing import Literal
-from smpub import Publisher, PublishedClass
-from smpub.apiswitcher import ApiSwitcher
+from smartswitch import Switcher
+from smpub import Publisher
 
-
-class AccountHandler(PublishedClass):
+class AccountHandler:
     """Handler for account management."""
 
-    __slots__ = ("accounts",)
-    api = ApiSwitcher(prefix="account_")
+    __slots__ = ("accounts", "smpublisher")
+    api = Switcher(prefix="account_")
 
     def __init__(self):
         self.accounts = {}
@@ -72,11 +71,11 @@ class AccountHandler(PublishedClass):
         return {"count": len(self.accounts), "accounts": list(self.accounts.values())}
 
 
-class MailHandler(PublishedClass):
+class MailHandler:
     """Handler for mail operations."""
 
-    __slots__ = ("account_handler", "messages")
-    api = ApiSwitcher(prefix="mail_")
+    __slots__ = ("account_handler", "messages", "smpublisher")
+    api = Switcher(prefix="mail_")
 
     def __init__(self, account_handler):
         self.account_handler = account_handler
@@ -141,7 +140,6 @@ class MailHandler(PublishedClass):
         self.messages.clear()
         return {"success": True, "cleared": count}
 
-
 class MainClass(Publisher):
     """Mail service application."""
 
@@ -150,7 +148,6 @@ class MainClass(Publisher):
         self.mail = MailHandler(self.account)
         self.publish("account", self.account, cli=True, openapi=True)
         self.publish("mail", self.mail, cli=True, openapi=True)
-
 
 if __name__ == "__main__":
     app = MainClass()

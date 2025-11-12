@@ -6,6 +6,7 @@ import os
 import sys
 from pydantic import ValidationError
 from smartswitch import Switcher
+from smartasync import SmartasyncPlugin
 from .published import PublisherContext
 from .validation import validate_args, format_validation_error
 from .interactive import prompt_for_parameters
@@ -39,9 +40,20 @@ class Publisher:
         """
         Initialize Publisher.
 
-        Creates parent_api Switcher and calls initialize() hook.
+        Creates parent_api Switcher with plugin chain:
+        1. LoggingPlugin (silent mode) - tracks all calls
+        2. PydanticPlugin - validates and creates models
+        3. SmartasyncPlugin - handles sync/async (must be last)
+
+        Then calls initialize() hook.
         """
-        self.parent_api = Switcher(name="root")
+        # Create root Switcher with plugins pre-configured in correct order
+        self.parent_api = (
+            Switcher(name="root")
+            .plug("logging", mode="silent")  # First: track all calls (silent mode)
+            .plug("pydantic")  # Second: validation and model generation
+            .plug(SmartasyncPlugin())  # Last: async wrapping (must be final)
+        )
         self.published_instances = {}
         self._cli_handlers = {}
         self._openapi_handlers = {}
@@ -77,64 +89,6 @@ class Publisher:
         Raises:
             TypeError: If target_object uses __slots__ but doesn't include 'smpublisher' slot
         """
-        # Auto-upgrade plain Switcher to ApiSwitcher (Issue #5)
-        # This allows users to use plain smartswitch.Switcher without changing imports
-        # when they want to publish with smpub
-        if hasattr(target_object.__class__, "api"):
-            handler_api = target_object.__class__.api
-
-            # Check if it's a plain Switcher (not already ApiSwitcher)
-            from smartswitch import Switcher
-            from .apiswitcher import ApiSwitcher
-
-            if isinstance(handler_api, Switcher) and not isinstance(handler_api, ApiSwitcher):
-                # Create ApiSwitcher with same configuration
-                api_switcher = ApiSwitcher(prefix=handler_api.prefix)
-
-                # Copy registered handlers from plain Switcher
-                api_switcher._handlers = handler_api._handlers.copy()
-
-                # Generate Pydantic models retroactively for already-decorated methods
-                # This is necessary because methods were decorated with plain Switcher,
-                # but now we need Pydantic models for FastAPI integration
-                from smartasync import smartasync
-
-                for method_key in handler_api._handlers.keys():
-                    # Reconstruct full method name with prefix
-                    full_method_name = (
-                        f"{handler_api.prefix}{method_key}" if handler_api.prefix else method_key
-                    )
-
-                    # Get the original method from handler class
-                    if hasattr(target_object.__class__, full_method_name):
-                        original_method = getattr(target_object.__class__, full_method_name)
-
-                        # Check if method already has smartasync wrapper
-                        # If not, apply it now for bidirectional sync/async support
-                        if not hasattr(original_method, "_smartasync_reset_cache"):
-                            # Method not wrapped yet - wrap it with smartasync
-                            wrapped_method = smartasync(original_method)
-                            # Replace on class
-                            setattr(target_object.__class__, full_method_name, wrapped_method)
-                            # Update reference
-                            func_for_model = original_method
-                        else:
-                            # Already wrapped - use unwrapped version for Pydantic model
-                            func_for_model = (
-                                original_method.__wrapped__
-                                if hasattr(original_method, "__wrapped__")
-                                else original_method
-                            )
-
-                        # Generate Pydantic model from original (unwrapped) function
-                        if hasattr(api_switcher, "_create_pydantic_model"):
-                            model = api_switcher._create_pydantic_model(func_for_model)
-                            if model is not None:
-                                api_switcher._pydantic_models[method_key] = model
-
-                # Replace handler's api attribute with upgraded ApiSwitcher
-                target_object.__class__.api = api_switcher
-
         # Create and inject PublisherContext
         context = PublisherContext(target_object)
         context.parent_api = self.parent_api
@@ -159,6 +113,9 @@ class Publisher:
             # This automatically registers the child via SmartSwitch's parent.setter
             handler_api.parent = self.parent_api
 
+            # Apply plugins retroactively to ensure all handlers have required plugins
+            self._ensure_plugins(handler_api)
+
         # Save instance
         self.published_instances[name] = target_object
 
@@ -169,6 +126,59 @@ class Publisher:
         if openapi:
             effective_http_path = http_path if http_path is not None else f"/{name}"
             self._openapi_handlers[effective_http_path] = {"handler": target_object, "name": name}
+
+    def _ensure_plugins(self, handler_api):
+        """
+        Ensure handler has required plugins, applying them retroactively if needed.
+
+        Required plugins for smpub:
+        1. LoggingPlugin - for call tracking
+        2. PydanticPlugin - for validation and model generation
+        3. SmartasyncPlugin - for async wrapping (must be last)
+
+        Args:
+            handler_api: The Switcher instance from the handler class
+        """
+        # Get current plugin names
+        current_plugins = {p.plugin_name for p in handler_api._plugins if hasattr(p, 'plugin_name')}
+
+        # Check for SmartasyncPlugin and remove it temporarily (must be last)
+        smartasync_plugin = None
+        for plugin in handler_api._plugins[:]:  # Copy list to modify during iteration
+            if isinstance(plugin, SmartasyncPlugin):
+                smartasync_plugin = plugin
+                handler_api._plugins.remove(plugin)
+                # Also remove from registry
+                if 'smartasync' in handler_api._plugin_registry:
+                    del handler_api._plugin_registry['smartasync']
+                break
+
+        # Track which plugins we add (for retroactive on_decorate)
+        new_plugins = []
+
+        # Add Logging if missing
+        if 'logger' not in current_plugins:
+            handler_api.plug('logging', mode='silent')
+            new_plugins.append(('logger', handler_api._plugins[-1]))
+
+        # Add Pydantic if missing
+        if 'pydantic' not in current_plugins:
+            handler_api.plug('pydantic')
+            new_plugins.append(('pydantic', handler_api._plugins[-1]))
+
+        # Re-add or add SmartasyncPlugin at the end
+        if smartasync_plugin:
+            handler_api._plugins.append(smartasync_plugin)
+            handler_api._plugin_registry['smartasync'] = smartasync_plugin
+        else:
+            handler_api.plug(SmartasyncPlugin())
+
+        # Apply on_decorate retroactively for newly added plugins
+        if new_plugins:
+            for method_name, method_func in handler_api._handlers.items():
+                for plugin_name, plugin in new_plugins:
+                    if hasattr(plugin, 'on_decorate'):
+                        plugin.on_decorate(method_func, handler_api)
 
     def run(self, mode: str | None = None, port: int = 8000):
         """

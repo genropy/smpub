@@ -12,8 +12,6 @@ try:
 except ImportError:
     FastAPI = None
 
-from .apiswitcher import ApiSwitcher
-
 
 def create_fastapi_app(
     publisher,
@@ -84,17 +82,12 @@ def create_fastapi_app(
             if not inspect.ismethod(method):
                 continue
 
-            # Require ApiSwitcher for OpenAPI/HTTP mode
-            if not isinstance(switcher, ApiSwitcher):
-                raise TypeError(
-                    f"Handler '{handler_name}' must use ApiSwitcher for OpenAPI exposure. "
-                    f"Change 'from smartswitch import Switcher' to "
-                    f"'from smpub.apiswitcher import ApiSwitcher' and use "
-                    f"'api = ApiSwitcher(prefix=...)' instead of 'api = Switcher(prefix=...)'."
-                )
-
-            # Get pre-created Pydantic model from ApiSwitcher
-            RequestModel = switcher.get_pydantic_model(method_name)
+            # Get Pydantic model from func._plugin_meta['pydantic']
+            # This is prepared by PydanticPlugin during decoration via on_decorate() hook
+            RequestModel = None
+            if hasattr(method, '_plugin_meta') and 'pydantic' in method._plugin_meta:
+                pydantic_meta = method._plugin_meta['pydantic']
+                RequestModel = pydantic_meta.get('model')
 
             # Store endpoint info
             route_path = f"{http_path}/{api_method_name}"

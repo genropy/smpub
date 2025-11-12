@@ -166,7 +166,7 @@ python myapp.py handler process --interactive
 ## Critical Rules
 
 1. **__slots__ requirement**: If handler uses `__slots__`, must include `'smpublisher'`
-2. **Auto-upgrade**: Plain `Switcher` automatically upgraded to `ApiSwitcher` on publish
+2. **Plugin application**: Required plugins (Logging, Pydantic, Smartasync) automatically applied on publish
 3. **Type hints**: Use type hints for automatic validation and OpenAPI generation
 4. **Method naming**: With prefix, method `handler_add` → exposed as `add`
 5. **HTTP methods**: All HTTP endpoints use POST (not GET)

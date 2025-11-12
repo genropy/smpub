@@ -1,127 +1,133 @@
 # Demo Shop - smpub Example Application
 
-Questo è l'esempio completo che dimostra come usare **smpub** per pubblicare un'applicazione Python come CLI/HTTP API.
+This is a complete example demonstrating how to use **smpub** to publish a Python application as CLI/HTTP API.
 
-## Struttura
+## Structure
 
-```
+```text
 demo_shop/
-├── sample_shop/       # 📦 Libreria Python standalone
-│   ├── sql/          # Sistema database generico
-│   ├── tables/       # Manager per articoli, acquisti, ecc.
-│   ├── shop.py       # Classe principale Shop
-│   ├── example_*.py  # Esempi di uso diretto Python
+├── sample_shop/       # 📦 Standalone Python library
+│   ├── sql/          # Generic database system
+│   ├── tables/       # Managers for articles, purchases, etc.
+│   ├── shop.py       # Main Shop class
+│   ├── example_*.py  # Direct Python usage examples
 │   └── test_*.py     # Tests
 │
-└── published_shop/    # 🚀 App pubblicata con smpub
-    ├── main.py       # Publisher che espone Shop via CLI/HTTP
-    ├── populate_db.py # Script per popolare il database
-    └── shop.db       # Database SQLite
+└── published_shop/    # 🚀 App published with smpub
+    ├── main.py       # Publisher that exposes Shop via CLI/HTTP
+    ├── populate_db.py # Script to populate database
+    └── shop.db       # SQLite database
 ```
 
-## Punti Chiave
+## Key Points
 
-### 1. Separazione di Responsabilità
+### 1. Separation of Concerns
 
-- **sample_shop**: Libreria Python pura, senza dipendenze da smpub
-  - Può essere usata direttamente (vedi `example_pythonic.py`)
-  - Ha i suoi test, documentazione, esempi
-  - Non sa nulla di CLI o HTTP
+- **sample_shop**: Pure Python library, no smpub dependencies
+  - Can be used directly (see `example_pythonic.py`)
+  - Has its own tests, documentation, examples
+  - Knows nothing about CLI or HTTP
 
-- **published_shop**: Layer sottile che usa smpub per esporre sample_shop
-  - Importa Shop da sample_shop
-  - La pubblica tramite smpub Publisher
-  - Fornisce CLI e HTTP API automaticamente
+- **published_shop**: Thin layer using smpub to expose sample_shop
+  - Imports Shop from sample_shop
+  - Publishes it via smpub Publisher
+  - Provides CLI and HTTP API automatically
 
-### 2. Filosofia "Thin Publishing Layer"
+### 2. "Thin Publishing Layer" Philosophy
 
-smpub non è un framework intrusivo:
-- La tua libreria rimane indipendente
-- smpub aggiunge solo CLI/HTTP layer
-- Puoi usare la libreria anche senza smpub
+smpub is not an intrusive framework:
 
-## Come Usare
+- Your library remains independent
+- smpub only adds CLI/HTTP layer
+- You can use the library without smpub
 
-### Usa sample_shop direttamente (Python puro)
+## How to Use
+
+### Use sample_shop directly (Pure Python)
 
 ```python
 from examples.demo_shop.sample_shop.shop import Shop
 
-# Istanzia e usa normalmente
+# Instantiate and use normally
 shop = Shop("sqlite:myshop.db")
 shop.db.table("types").add(name="electronics", description="Electronic devices")
 ```
 
-Vedi `sample_shop/example_pythonic.py` per un esempio completo.
+See `sample_shop/example_pythonic.py` for a complete example.
 
-### Usa published_shop (CLI/HTTP)
+### Use published_shop (CLI/HTTP)
 
 ```bash
-# Popola il database
+# Populate database
 cd examples/demo_shop/published_shop
 python populate_db.py
 
-# Avvia il server HTTP
+# Start HTTP server
 python main.py
 ```
 
-Poi apri il browser:
-- http://localhost:8000/ - Homepage con link alla documentazione
-- http://localhost:8000/docs - Swagger UI interattivo
-- http://localhost:8000/types/list?format=markdown_html - Lista tipi in markdown renderizzato
+Then open browser:
 
-## Formati Supportati
+- <http://localhost:8000/> - Homepage with documentation links
+- <http://localhost:8000/docs> - Interactive Swagger UI
+- <http://localhost:8000/types/list?format=markdown_html> - Types list in rendered markdown
 
-Tutti i metodi `list()` supportano il parametro `format`:
+## Supported Formats
 
-- `json` - Risposta JSON (default)
-- `markdown` - Tabella Markdown (testo)
-- `html` - Tabella HTML (testo)
-- `table` - Tabella ASCII (testo)
-- `markdown_html` - Markdown renderizzato nel browser con marked.js + mermaid.js
+All `list()` methods support the `format` parameter:
 
-Esempio:
+- `json` - JSON response (default)
+- `markdown` - Markdown table (text)
+- `html` - HTML table (text)
+- `table` - ASCII table (text)
+- `markdown_html` - Markdown rendered in browser with marked.js + mermaid.js
+
+Example:
+
 ```bash
 # JSON
 curl http://localhost:8000/articles/list
 
-# Markdown renderizzato nel browser
+# Markdown rendered in browser
 curl http://localhost:8000/articles/list?format=markdown_html
 ```
 
-## Features Dimostrate
+## Demonstrated Features
 
 ### SmartSwitch
+
 - Plugin chain (logging → pydantic → dbop)
-- Validazione automatica parametri con Pydantic
-- Gestione transazioni database automatica
+- Automatic parameter validation with Pydantic
+- Automatic database transaction management
 
 ### smpub Publisher
-- Pubblicazione automatica di classi Python
-- Generazione CLI/HTTP da switcher
-- OpenAPI/Swagger automatico
-- Supporto per metodi sync/async
+
+- Automatic publishing of Python classes
+- CLI/HTTP generation from switcher
+- Automatic OpenAPI/Swagger
+- Support for sync/async methods
 
 ### SQL Database System
-- Adapter pattern per SQLite/PostgreSQL
-- Table managers con CRUD operations
-- Query builder con supporto transazioni
-- Connection pooling thread-safe
 
-## File Importanti
+- Adapter pattern for SQLite/PostgreSQL
+- Table managers with CRUD operations
+- Query builder with transaction support
+- Thread-safe connection pooling
 
-| File | Descrizione |
+## Important Files
+
+| File | Description |
 |------|-------------|
-| `sample_shop/shop.py` | Classe principale Shop |
-| `sample_shop/sql/table.py` | Classe base per table managers |
-| `sample_shop/tables/*.py` | Manager per articoli, acquisti, ecc. |
-| `published_shop/main.py` | Publisher smpub |
-| `sample_shop/example_pythonic.py` | Esempio uso Python puro |
+| `sample_shop/shop.py` | Main Shop class |
+| `sample_shop/sql/table.py` | Base class for table managers |
+| `sample_shop/tables/*.py` | Managers for articles, purchases, etc. |
+| `published_shop/main.py` | smpub Publisher |
+| `sample_shop/example_pythonic.py` | Pure Python usage example |
 
-## Prossimi Passi
+## Next Steps
 
-1. Esplora `sample_shop/example_pythonic.py` per vedere l'uso Python puro
-2. Guarda `sample_shop/tables/*.py` per vedere i table managers
-3. Leggi `published_shop/main.py` per capire il publisher pattern
-4. Avvia il server e sperimenta con Swagger UI
-5. Prova i diversi formati di output
+1. Explore `sample_shop/example_pythonic.py` to see pure Python usage
+2. Look at `sample_shop/tables/*.py` to see table managers
+3. Read `published_shop/main.py` to understand publisher pattern
+4. Start the server and experiment with Swagger UI
+5. Try different output formats

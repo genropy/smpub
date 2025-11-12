@@ -131,6 +131,11 @@ def create_fastapi_app(
                                 if isinstance(value, Enum):
                                     params_dict[key] = value.value
 
+                            # Handle markdown_html format: convert to markdown for the method call
+                            original_format = params_dict.get("format")
+                            if original_format == "markdown_html":
+                                params_dict["format"] = "markdown"
+
                             # Call method - smartasync handles async/sync automatically
                             result = method_ref(**params_dict)
                             if inspect.iscoroutine(result):
@@ -139,11 +144,77 @@ def create_fastapi_app(
                             # For read methods, return result directly without wrapper if it's a string
                             # (formatted output like markdown/html/table)
                             if isinstance(result, str):
-                                format_type = params_dict.get("format", "json")
+                                format_type = original_format if original_format else "json"
                                 if format_type == "html":
                                     from fastapi.responses import HTMLResponse
 
                                     return HTMLResponse(content=result)
+                                elif format_type == "markdown_html":
+                                    from fastapi.responses import HTMLResponse
+
+                                    # Wrap markdown in HTML with client-side rendering libraries
+                                    html_wrapper = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Markdown View</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({{ startOnLoad: true }});
+    </script>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }}
+        table {{
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }}
+        th, td {{
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }}
+        th {{
+            background-color: #f5f5f5;
+            font-weight: 600;
+        }}
+        tr:hover {{
+            background-color: #f9f9f9;
+        }}
+        code {{
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }}
+        pre {{
+            background-color: #f4f4f4;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }}
+        pre code {{
+            background-color: transparent;
+            padding: 0;
+        }}
+    </style>
+</head>
+<body>
+    <div id="content"></div>
+    <script>
+        const markdown = {repr(result)};
+        document.getElementById('content').innerHTML = marked.parse(markdown);
+    </script>
+</body>
+</html>"""
+                                    return HTMLResponse(content=html_wrapper)
                                 else:
                                     from fastapi.responses import PlainTextResponse
 

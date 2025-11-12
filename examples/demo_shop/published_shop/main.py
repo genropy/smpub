@@ -16,11 +16,13 @@ To use Shop without smpub, see:
 import sys
 from pathlib import Path
 
-# Add parent directory to path to import examples
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add smpub root to path (to import smpub package)
+# And add examples parent to path (to import examples.demo_shop)
+smpub_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(smpub_root))
 
 from smpub import Publisher
-from examples.sample_shop.shop import Shop
+from examples.demo_shop.sample_shop.shop import Shop
 
 
 class PublishedShop(Publisher):

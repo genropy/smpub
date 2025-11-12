@@ -4,10 +4,10 @@
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add smpub root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from examples.sample_shop.shop import Shop
+from examples.demo_shop.sample_shop.shop import Shop
 
 db_path = Path(__file__).parent / "shop.db"
 shop = Shop(f"sqlite:{db_path}")

@@ -3,7 +3,7 @@
 **Sample Shop** is a complete e-commerce library demonstrating how to build a well-structured Python application using **SmartSwitch** for method dispatch and a flexible SQL database system.
 
 ```{note}
-This library is **completely independent** from smpub. It uses SmartSwitch for clean API design, making it easy to publish later (see `published_shop/` for the trivial ~20 line publishing layer).
+This library is **completely independent** from smartpublisher. It uses SmartSwitch for clean API design, making it easy to publish later (see `published_shop/` for the trivial ~20 line publishing layer).
 ```
 
 ## What is Sample Shop?
@@ -220,7 +220,7 @@ smartswitch-integration
 Sample Shop is designed to be **easily published** using smpub. The `published_shop/` directory contains a minimal publishing layer (~20 lines):
 
 ```python
-from smpub import Publisher
+from smartpublisher import Publisher
 from sample_shop.shop import Shop
 
 class PublishedShop(Publisher):
@@ -254,4 +254,4 @@ MIT License - Sample code for demonstration purposes.
 
 - [smpub Framework](https://smpub.readthedocs.io)
 - [SmartSwitch](https://smartswitch.readthedocs.io)
-- [GitHub Repository](https://github.com/genropy/smpub)
+- [GitHub Repository](https://github.com/genropy/smartpublisher)

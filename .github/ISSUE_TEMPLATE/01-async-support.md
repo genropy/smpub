@@ -74,9 +74,9 @@ Example test:
 import asyncio
 import pytest
 from httpx import AsyncClient
-from smpub import Publisher, PublishedClass
-from smpub.apiswitcher import ApiSwitcher
-from smpub.api_server import create_fastapi_app
+from smartpublisher import Publisher, PublishedClass
+from smartpublisher.apiswitcher import ApiSwitcher
+from smartpublisher.api_server import create_fastapi_app
 
 class AsyncHandler(PublishedClass):
     api = ApiSwitcher(prefix='async_')
@@ -144,8 +144,8 @@ async def test_sync_handler_still_works():
 
 Add to docs:
 ```python
-from smpub import Publisher, PublishedClass
-from smpub.apiswitcher import ApiSwitcher
+from smartpublisher import Publisher, PublishedClass
+from smartpublisher.apiswitcher import ApiSwitcher
 import httpx
 import asyncio
 

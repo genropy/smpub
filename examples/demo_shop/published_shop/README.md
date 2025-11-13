@@ -58,7 +58,7 @@ curl -X POST http://localhost:8000/api/v1/articles/add \
 ```python
 # main.py is tiny - just imports and publishes!
 
-from smpub import Publisher
+from smartpublisher import Publisher
 from sample_shop import Shop  # ← Import existing class
 
 class ShopApp(Publisher):

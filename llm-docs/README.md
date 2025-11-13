@@ -5,14 +5,14 @@ CLI/API framework based on SmartSwitch for building command-line and web applica
 
 ## Installation
 ```bash
-pip install smpub
+pip install smartpublisher
 ```
 
 ## Essential Patterns
 
 ### 1. Basic Publisher Application
 ```python
-from smpub import Publisher
+from smartpublisher import Publisher
 from smartswitch import Switcher
 
 class MyHandler:
@@ -132,7 +132,7 @@ class MyApp(Publisher):
 
 ### 8. Custom HTTP Configuration
 ```python
-from smpub.http import create_fastapi_app
+from smartpublisher.http import create_fastapi_app
 
 app_publisher = MyApp()
 fastapi_app = create_fastapi_app(
@@ -206,7 +206,7 @@ app.run(mode="http", port=8000)
 
 ### OpenAPI Schema Generation
 ```python
-from smpub.http.openapi import generate_openapi_schema
+from smartpublisher.http.openapi import generate_openapi_schema
 
 schema = generate_openapi_schema(
     app,
@@ -219,7 +219,7 @@ schema = generate_openapi_schema(
 
 ### Validation Control
 ```python
-from smpub.validation import validate_args
+from smartpublisher.validation import validate_args
 
 # Validate CLI arguments against method signature
 validated = validate_args(method, ["arg1", "arg2"])
@@ -228,7 +228,7 @@ validated = validate_args(method, ["arg1", "arg2"])
 
 ### Interactive Forms
 ```python
-from smpub.interactive import prompt_for_parameters
+from smartpublisher.interactive import prompt_for_parameters
 
 # Prompt user for all method parameters
 values = prompt_for_parameters(method)
@@ -290,7 +290,7 @@ class DualApp(Publisher):
 
 ## Full Example - Real Application
 ```python
-from smpub import Publisher
+from smartpublisher import Publisher
 from smartswitch import Switcher
 from typing import List
 

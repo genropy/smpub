@@ -39,7 +39,7 @@ Add this section after "What smpub Actually Gives You":
 ### Example: Adding CORS and Authentication
 
 ```python
-from smpub.api_server import create_fastapi_app
+from smartpublisher.api_server import create_fastapi_app
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -154,7 +154,7 @@ smpub exposes the FastAPI app for full customization:
 #### Accessing the FastAPI App
 
 ```python
-from smpub.api_server import create_fastapi_app
+from smartpublisher.api_server import create_fastapi_app
 
 app_instance = MyApp()
 fastapi_app = create_fastapi_app(app_instance)

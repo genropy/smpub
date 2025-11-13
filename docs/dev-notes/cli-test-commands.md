@@ -299,7 +299,7 @@ pip install questionary  # macOS
 pip install questionary  # Debian/Ubuntu
 
 # Check Python path
-python -c "import smpub; print(smpub.__file__)"
+python -c "import smartpublisher; print(smpub.__file__)"
 
 # Errore "zsh: no matches found" - SEMPRE quota le parentesi quadre in zsh
 pip install 'smpub[http]'

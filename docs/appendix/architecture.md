@@ -58,7 +58,7 @@ graph TB
 **Usage**:
 
 ```python
-from smpub.apiswitcher import ApiSwitcher
+from smartpublisher.apiswitcher import ApiSwitcher
 
 class MyHandler(PublishedClass):
     __slots__ = ('data',)  # Your slots
@@ -114,7 +114,7 @@ When using standard `Switcher` with FastAPI, the OpenAPI schema doesn't show met
 
 **Usage**:
 ```python
-from smpub.apiswitcher import ApiSwitcher
+from smartpublisher.apiswitcher import ApiSwitcher
 
 class MyHandler(PublishedClass):
     api = ApiSwitcher(prefix='my_')  # Required for HTTP mode
@@ -401,7 +401,7 @@ def my_method(self, email: str):
 Override route generation:
 
 ```python
-from smpub.http import create_fastapi_app
+from smartpublisher.http import create_fastapi_app
 
 app = create_fastapi_app(publisher)
 # Add custom routes
@@ -413,7 +413,7 @@ app.get("/health")(lambda: {"status": "ok"})
 Extend interactive module with custom Textual widgets:
 
 ```python
-from smpub.interactive import InteractiveApp
+from smartpublisher.interactive import InteractiveApp
 from textual.widgets import Input, Button
 
 # Create custom Textual app

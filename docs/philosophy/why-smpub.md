@@ -96,7 +96,7 @@ def analyze_results(data_dir: str, threshold: float = 0.5) -> list:
 
 ```python
 from smartpublisher import Publisher, PublishedClass
-from smpub.apiswitcher import ApiSwitcher
+from smartpublisher.apiswitcher import ApiSwitcher
 
 class DataTools(PublishedClass):
     api = ApiSwitcher(prefix='data_')

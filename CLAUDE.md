@@ -1,22 +1,27 @@
-# Claude Code Instructions - smpub
+# Claude Code Instructions - smartpublisher
 
 ## Project Context
 
-**smpub** (Smart Publisher) is a CLI/API framework based on SmartSwitch for building command-line and web applications with automatic dispatch.
+**smartpublisher** (Smart Publisher) is a CLI/API framework based on SmartSwitch for building command-line and web applications with automatic dispatch.
+
+**Naming Convention**:
+- **Package name**: `smartpublisher` (used in imports: `from smartpublisher import ...`)
+- **CLI command**: `smpub` (kept short for user convenience)
+- **Repository**: `genropy/smartpublisher`
 
 ### Current Status
 - **Development Status**: Alpha (`Development Status :: 3 - Alpha`)
-- **Version**: 0.1.0
+- **Version**: 0.2.0
 - **Has Implementation**: Partial (core classes implemented, CLI/HTTP to be completed)
-- **Dependencies**: smartswitch >= 0.1.0
+- **Dependencies**: smartswitch >= 0.6.0, smartasync >= 0.2.0
 
 ### Project Overview
 
-smpub provides:
+smartpublisher provides:
 - `Publisher` base class for applications
-- `PublishedClass` mixin for handlers
-- Registry system for app management (.published file)
-- CLI entry point (`smpub` command)
+- `PublisherContext` for handler context management
+- Registry system for app management
+- CLI entry point (`smpub` command - note: command name is kept short)
 - CLI/HTTP exposure control
 
 ## Repository Information
@@ -30,14 +35,18 @@ smpub provides:
 ## Project Structure
 
 ```
-smpub/
-├── src/smpub/
+smartpublisher/
+├── src/smartpublisher/
 │   ├── __init__.py          # Package exports
-│   ├── cli.py               # CLI entry point
+│   ├── cli.py               # CLI entry point (smpub command)
 │   ├── publisher.py         # Publisher class
-│   └── published.py         # PublishedClass mixin
-├── tests/                   # Tests (to be added)
-├── docs/                    # Documentation (to be added)
+│   ├── published.py         # PublisherContext and utilities
+│   ├── http/                # HTTP server implementation
+│   ├── interactive/         # Interactive CLI mode
+│   └── validation/          # Pydantic validation
+├── tests/                   # Test suite
+├── docs/                    # Sphinx documentation
+├── examples/                # Example applications
 ├── pyproject.toml          # Package configuration
 ├── README.md               # Project overview
 ├── LICENSE                 # MIT license
@@ -105,11 +114,12 @@ Tests to be implemented:
 
 ## Relationship with SmartSwitch
 
-smpub **depends on** smartswitch:
+smartpublisher **depends on** smartswitch:
 - Uses `Switcher` for handler method dispatch
 - Handlers define `api = Switcher(...)` class variable
-- Publisher creates root `parent_api = Switcher()`
-- Hierarchical API structure through parent linking
+- Publisher creates root `Switcher()` for routing
+- Hierarchical API structure through composition
+- SmartSwitch provides the dispatch mechanism, smartpublisher adds CLI/HTTP interfaces
 
 ## Development Workflow
 

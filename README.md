@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.png" alt="smpub Logo" width="200"/>
+<img src="docs/assets/logo.png" alt="Smart Publisher Logo" width="200"/>
 
 # smpub - Smart Publisher
 
@@ -8,12 +8,12 @@
 
 </div>
 
-[![PyPI version](https://img.shields.io/pypi/v/smpub.svg)](https://pypi.org/project/smartpublisher/)
+[![PyPI version](https://img.shields.io/pypi/v/smartpublisher.svg)](https://pypi.org/project/smartpublisher/)
 [![Tests](https://github.com/genropy/smartpublisher/actions/workflows/test.yml/badge.svg)](https://github.com/genropy/smartpublisher/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/genropy/smpub/branch/main/graph/badge.svg)](https://codecov.io/gh/genropy/smpub)
+[![codecov](https://codecov.io/gh/genropy/smartpublisher/branch/main/graph/badge.svg)](https://codecov.io/gh/genropy/smartpublisher)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://readthedocs.org/projects/smpub/badge/?version=latest)](https://smartpublisher.readthedocs.io/)
+[![Documentation](https://readthedocs.org/projects/smartpublisher/badge/?version=latest)](https://smartpublisher.readthedocs.io/)
 [![Part of Genro-Libs](https://img.shields.io/badge/Part%20of-Genro--Libs-blue)](https://github.com/softwell/genro-libs)
 [![LLM Docs](https://img.shields.io/badge/LLM-Docs-purple)](llm-docs/)
 
@@ -293,7 +293,7 @@ smpub is part of the [Genro-Libs toolkit](https://github.com/softwell/genro-libs
 
 ```bash
 git clone https://github.com/genropy/smartpublisher.git
-cd smpub
+cd smartpublisher
 pip install -e ".[dev]"
 pytest
 ```

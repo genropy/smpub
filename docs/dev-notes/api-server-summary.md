@@ -88,7 +88,7 @@ if len(sys.argv) >= 3 and sys.argv[2] == "serve":
 
 **Modifiche**:
 ```python
-from smpub.apiswitcher import ApiSwitcher
+from smartpublisher.apiswitcher import ApiSwitcher
 
 class AccountHandler(PublishedClass):
     api = ApiSwitcher(prefix='account_')  # Era: Switcher

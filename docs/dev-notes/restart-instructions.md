@@ -278,7 +278,7 @@ python sample_app.py --help
 1. **Not a Git Repo Yet**: Initialize when ready:
    ```bash
    git init
-   git remote add origin git@github.com:genropy/smpub.git
+   git remote add origin git@github.com:genropy/smartpublisher.git
    ```
 
 2. **Part of Genro-Libs**:

@@ -73,7 +73,7 @@ Check that smpub is installed correctly:
 
 ```bash
 smpub --version
-python -c "import smpub; print(smpub.__version__)"
+python -c "import smartpublisher; print(smartpublisher.__version__)"
 ```
 
 ## Next Steps

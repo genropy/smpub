@@ -11,7 +11,7 @@
 [![PyPI](https://img.shields.io/pypi/v/smpub)](https://pypi.org/project/smartpublisher/)
 [![Python](https://img.shields.io/pypi/pyversions/smpub)](https://pypi.org/project/smartpublisher/)
 [![License](https://img.shields.io/pypi/l/smpub)](https://github.com/genropy/smartpublisher/blob/main/LICENSE)
-[![codecov](https://codecov.io/gh/genropy/smpub/branch/main/graph/badge.svg)](https://codecov.io/gh/genropy/smpub)
+[![codecov](https://codecov.io/gh/genropy/smartpublisher/branch/main/graph/badge.svg)](https://codecov.io/gh/genropy/smartpublisher)
 [![Documentation](https://readthedocs.org/projects/smpub/badge/?version=latest)](https://smartpublisher.readthedocs.io)
 [![Part of Genro-Libs](https://img.shields.io/badge/Genro--Libs-toolkit-blue)](https://github.com/softwell/genro-libs)
 

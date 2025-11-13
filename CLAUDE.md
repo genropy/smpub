@@ -10,9 +10,9 @@
 - **Repository**: `genropy/smartpublisher`
 
 ### Current Status
-- **Development Status**: Alpha (`Development Status :: 3 - Alpha`)
-- **Version**: 0.2.0
-- **Has Implementation**: Partial (core classes implemented, CLI/HTTP to be completed)
+- **Development Status**: Beta (`Development Status :: 4 - Beta`)
+- **Version**: 0.3.0
+- **Has Implementation**: Complete (all major features implemented)
 - **Dependencies**: smartswitch >= 0.6.0, smartasync >= 0.2.0
 
 ### Project Overview

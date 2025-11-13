@@ -30,5 +30,5 @@ Example:
 from smartpublisher.publisher import Publisher
 from smartpublisher.published import PublisherContext, discover_api_json
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = ["Publisher", "PublisherContext", "discover_api_json"]

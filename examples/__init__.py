@@ -1,28 +1,17 @@
 """
-Examples for smpub.
+Examples for smartpublisher.
 
-This package contains example applications demonstrating smpub usage.
+This package contains minimal inline examples.
 
-## Current Examples
+For complete, production-ready examples with full documentation,
+see the smartpublisher-examples repository:
+https://github.com/genropy/smartpublisher-examples
 
-### sample_shop/ - Complete E-commerce Example
-Standalone Python library with SQLite backend. Demonstrates:
-- Pure Python usage (no smpub required)
-- smartswitch plugin benefits (Pydantic validation, etc.)
-- Clean separation of concerns
-- Comprehensive tests (10/10 passing)
-- Interactive Jupyter notebook
-- Complete documentation
-
-**Start here!** This is the primary example.
-
-### published_shop/ - Publisher Example
-Shows how to optionally publish sample_shop for CLI/HTTP access.
-Demonstrates that smpub is a thin publishing layer.
-
-## Old Examples
-
-See `old_examples/` for archived examples that may be incomplete or use old patterns.
+The external repository includes:
+- Demo Shop - E-commerce system with database operations
+- Complete test suites
+- Sphinx documentation
+- Custom plugins examples
 """
 
-__all__ = ["sample_shop", "published_shop"]
+__all__ = []

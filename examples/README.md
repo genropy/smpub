@@ -52,8 +52,7 @@ python calculator.py
 
 ## Available Examples in This Directory
 
-- **old_examples/** - Legacy examples (for reference only)
-- More minimal examples coming soon...
+This directory contains minimal inline examples. For complete, production-ready examples with full documentation, see the [smartpublisher-examples](https://github.com/genropy/smartpublisher-examples) repository.
 
 ## Complete Examples Repository
 

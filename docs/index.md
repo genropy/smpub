@@ -107,7 +107,7 @@ SmartSwitch provides an **elegant Pythonic dispatch** system with:
 
 When you use SmartSwitch, your code is already well-structured for dispatch. smpub simply transforms that dispatch into multiple interfaces.
 
-**Real-world example**: See the [Demo Shop](https://github.com/genropy/smartpublisher/tree/main/examples/demo_shop) - a complete e-commerce application showing SmartSwitch plugins for database transactions, validation, and format negotiation. Published in ~20 lines with smpub.
+**Real-world example**: See the [Demo Shop](https://github.com/genropy/smartpublisher-examples) - a complete e-commerce application showing SmartSwitch plugins for database transactions, validation, and format negotiation. Published in ~20 lines with smpub.
 
 ## Features
 

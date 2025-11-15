@@ -129,7 +129,7 @@ Current quick start probably shows inline usage. Should show:
 
 - **Simple examples** in smpub docs (calculator, hello world)
 - **Complex demos** in separate docs (demo_shop, future demos)
-- Link to demos with: "For a complete example, see [Demo Shop](https://smpub-demo-shop.readthedocs.io)"
+- Link to demos with: "For a complete example, see [Demo Shop](https://smartpublisher-demo-shop.readthedocs.io)"
 
 ## Action Items
 
@@ -143,7 +143,7 @@ Current quick start probably shows inline usage. Should show:
 ## Demo Shop Documentation
 
 Demo Shop will have **separate ReadTheDocs project**:
-- URL: `smpub-demo-shop.readthedocs.io`
+- URL: `smartpublisher-demo-shop.readthedocs.io`
 - Config: `.readthedocs-demo.yaml`
 - Focus: Document sample_shop library (no smpub references)
 - Bridge: Small page in smpub docs linking to it

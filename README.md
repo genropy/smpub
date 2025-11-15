@@ -99,7 +99,7 @@ SmartSwitch provides an **elegant Pythonic dispatch** system with:
 
 When you use SmartSwitch, your code is already well-structured for dispatch. smpub simply transforms that dispatch into multiple interfaces.
 
-**Learn more**: See how a real application uses SmartSwitch plugins in the [Demo Shop documentation](https://github.com/genropy/smartpublisher/tree/main/examples/demo_shop) (SQL database with transaction management, validation, and format negotiation).
+**Learn more**: See complete examples at [smartpublisher-examples](https://github.com/genropy/smartpublisher-examples) including Demo Shop (e-commerce system with database operations, custom plugins, and full documentation).
 
 ## Features
 
@@ -263,7 +263,7 @@ Topics covered:
 
 For a complete example showing SmartSwitch plugins, database adapters, and advanced patterns, see:
 
-**[Demo Shop Documentation](https://github.com/genropy/smartpublisher/tree/main/examples/demo_shop)** - E-commerce library with:
+**[Demo Shop Documentation](https://github.com/genropy/smartpublisher-examples)** - E-commerce library with:
 - SQL database system with adapters (SQLite/PostgreSQL)
 - Table managers with CRUD operations
 - SmartSwitch plugin chain (Logging, Pydantic, DbOp)

@@ -176,7 +176,7 @@ class TestParameterFormTUI:
         params = [{"name": "username", "type": "str", "required": True, "default": None}]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             # Check that input field exists
             assert app.query_one("#field_username") is not None
 
@@ -185,7 +185,7 @@ class TestParameterFormTUI:
         params = [{"name": "port", "type": "int", "required": False, "default": 8000}]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             input_field = app.query_one("#field_port")
             assert input_field.value == "8000"
 
@@ -194,7 +194,7 @@ class TestParameterFormTUI:
         params = [{"name": "enabled", "type": "bool", "required": False, "default": True}]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             from textual.widgets import Switch
 
             switch = app.query_one("#field_enabled")
@@ -213,7 +213,7 @@ class TestParameterFormTUI:
         ]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             from textual.widgets import RadioSet
 
             radioset = app.query_one("#field_level")
@@ -250,7 +250,7 @@ class TestParameterFormTUI:
         app = ParameterForm(params)
         async with app.run_test() as pilot:
             # Toggle switch
-            switch = app.query_one("#field_debug")
+            app.query_one("#field_debug")
             await pilot.click("#field_debug")
 
             # Submit
@@ -286,7 +286,7 @@ class TestParameterFormTUI:
         ]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             # All fields should exist
             assert app.query_one("#field_name") is not None
             assert app.query_one("#field_port") is not None
@@ -333,7 +333,7 @@ class TestParameterFormTUI:
         app = ParameterForm(params)
         async with app.run_test() as pilot:
             # RadioSet should have 'b' selected by default
-            radioset = app.query_one("#field_choice")
+            app.query_one("#field_choice")
 
             # Submit without changing
             await pilot.click("#submit")
@@ -353,7 +353,7 @@ class TestParameterFormTUI:
         params = [{"name": "test", "type": "str", "required": True, "default": None}]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             # Check that help label exists
             help_label = app.query_one(".help")
             assert help_label is not None
@@ -364,7 +364,7 @@ class TestParameterFormTUI:
         params = [{"name": "test", "type": "str", "required": True, "default": None}]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             input_field = app.query_one("#field_test")
             assert input_field.placeholder == "Required"
 
@@ -373,6 +373,6 @@ class TestParameterFormTUI:
         params = [{"name": "test", "type": "str", "required": False, "default": None}]
 
         app = ParameterForm(params)
-        async with app.run_test() as pilot:
+        async with app.run_test():
             input_field = app.query_one("#field_test")
             assert input_field.placeholder == "Optional"

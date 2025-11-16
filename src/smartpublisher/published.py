@@ -88,37 +88,48 @@ def discover_api_json(target, recursive=False, switcher_name="api") -> dict:
             "parameters": [],
         }
 
-        # Get signature
-        try:
-            sig = inspect.signature(method)
-            for param_name, param in sig.parameters.items():
-                if param_name == "self":
-                    continue
+        # Try to use pre-prepared metadata from PydanticPlugin (fast path)
+        used_metadata = False
+        if hasattr(switcher, '_methods') and isinstance(switcher._methods, dict) and method_key in switcher._methods:
+            entry = switcher._methods[method_key]
+            pydantic_meta = entry.metadata.get("pydantic", {})
+            if pydantic_meta and "param_info" in pydantic_meta:
+                # Use pre-extracted parameter info (no inspect!)
+                method_info["parameters"] = pydantic_meta["param_info"]
+                used_metadata = True
 
-                # Extract type annotation
-                param_type = "Any"
-                if param.annotation != inspect.Parameter.empty:
-                    param_type = (
-                        param.annotation.__name__
-                        if hasattr(param.annotation, "__name__")
-                        else str(param.annotation)
+        # Fallback: extract signature if metadata not available
+        if not used_metadata:
+            try:
+                sig = inspect.signature(method)
+                for param_name, param in sig.parameters.items():
+                    if param_name == "self":
+                        continue
+
+                    # Extract type annotation
+                    param_type = "Any"
+                    if param.annotation != inspect.Parameter.empty:
+                        param_type = (
+                            param.annotation.__name__
+                            if hasattr(param.annotation, "__name__")
+                            else str(param.annotation)
+                        )
+
+                    # Check if required
+                    required = param.default == inspect.Parameter.empty
+                    default = None if required else param.default
+
+                    method_info["parameters"].append(
+                        {
+                            "name": param_name,
+                            "type": param_type,
+                            "required": required,
+                            "default": default,
+                        }
                     )
-
-                # Check if required
-                required = param.default == inspect.Parameter.empty
-                default = None if required else param.default
-
-                method_info["parameters"].append(
-                    {
-                        "name": param_name,
-                        "type": param_type,
-                        "required": required,
-                        "default": default,
-                    }
-                )
-        except Exception:
-            # If signature extraction fails, just skip parameters
-            pass
+            except Exception:
+                # If signature extraction fails, just skip parameters
+                pass
 
         result["methods"][display_name] = method_info
 

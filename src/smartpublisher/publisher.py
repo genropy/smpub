@@ -6,9 +6,8 @@ import os
 import sys
 from pydantic import ValidationError
 from smartswitch import Switcher
-from smartasync import SmartasyncPlugin
 from .published import PublisherContext
-from .validation import validate_args, format_validation_error
+from .validation import validate_args, validate_args_fast, format_validation_error
 from .interactive import prompt_for_parameters
 
 
@@ -41,19 +40,12 @@ class Publisher:
         Initialize Publisher.
 
         Creates parent_api Switcher with plugin chain:
-        1. LoggingPlugin (silent mode) - tracks all calls
-        2. PydanticPlugin - validates and creates models
-        3. SmartasyncPlugin - handles sync/async (must be last)
+        - PydanticPlugin - validates and creates models
 
         Then calls on_init() hook if defined by subclass.
         """
-        # Create root Switcher with plugins pre-configured in correct order
-        self.parent_api = (
-            Switcher(name="root")
-            .plug("logging", mode="silent")  # First: track all calls (silent mode)
-            .plug("pydantic")  # Second: validation and model generation
-            .plug(SmartasyncPlugin())  # Last: async wrapping (must be final)
-        )
+        # Create root Switcher with plugins pre-configured
+        self.parent_api = Switcher(name="root").plug("pydantic")
         self.published_instances = {}
         self._cli_handlers = {}
         self._openapi_handlers = {}
@@ -167,7 +159,6 @@ class MyPublisher(Publisher):
         Required plugins for smpub:
         1. LoggingPlugin - for call tracking
         2. PydanticPlugin - for validation and model generation
-        3. SmartasyncPlugin - for async wrapping (must be last)
 
         Args:
             handler_api: The Switcher instance from the handler class
@@ -178,20 +169,13 @@ class MyPublisher(Publisher):
         # Check if we need to add any plugins
         needs_logging = "logging" not in current_plugins
         needs_pydantic = "pydantic" not in current_plugins
-        has_smartasync = "SmartasyncPlugin" in current_plugins
 
         # Add missing plugins
-        # Note: SmartasyncPlugin should be last, but plug() maintains order
-        # If smartasync is present, we rely on user having set correct order
         if needs_logging:
-            handler_api.plug("logging", mode="silent")
+            handler_api.plug("logging")  # Disabled by default
 
         if needs_pydantic:
             handler_api.plug("pydantic")
-
-        # Add SmartasyncPlugin at end if not present
-        if not has_smartasync:
-            handler_api.plug(SmartasyncPlugin())
 
     def run(self, mode: str | None = None, port: int = 8000):
         """
@@ -275,16 +259,35 @@ class MyPublisher(Publisher):
             print(f"Use 'smpub {sys.argv[0]} {handler_name} --help' to see available methods")
             sys.exit(1)
 
-        # Get method
+        # Get method (bound to instance, will be wrapped by switcher)
         method = getattr(handler, full_method_name)
+
+        # Get pydantic metadata from switcher entry
+        # PydanticPlugin prepares everything we need during on_decore() phase
+        pydantic_meta = None
+        validation_target = None
+
+        if hasattr(switcher, '_methods') and method_name in switcher._methods:
+            entry = switcher._methods[method_name]
+            pydantic_meta = entry.metadata.get("pydantic", {})
+            # Keep reference to original function for fallback
+            validation_target = entry.func
 
         # Interactive mode: prompt for parameters
         if interactive:
-            method_args = prompt_for_parameters(method)
+            # Need original function for interactive prompts
+            func = validation_target if validation_target else method
+            method_args = prompt_for_parameters(func)
 
         # Validate and convert arguments using Pydantic
         try:
-            validated_params = validate_args(method, method_args)
+            # Use fast path if metadata is available (prepared in on_decore)
+            if pydantic_meta and "param_names" in pydantic_meta:
+                validated_params = validate_args_fast(pydantic_meta, method_args)
+            else:
+                # Fallback: use slower path with inspect
+                func = validation_target if validation_target else method
+                validated_params = validate_args(func, method_args)
         except ValidationError as e:
             print("Error: Invalid arguments")
             print(format_validation_error(e))
@@ -292,12 +295,20 @@ class MyPublisher(Publisher):
             sys.exit(1)
 
         # Call method with validated parameters
+        # Must pass handler as first positional arg so plugins see self in args[0]
         try:
-            result = method(**validated_params)
+            # Get switcher callable with smartasync for CLI (sync context)
+            # This ensures async methods work in CLI without event loop
+            switcher_callable = switcher.get(method_name, use_smartasync=True)
+            result = switcher_callable(handler, **validated_params)
+
             if result is not None:
                 print(result)
         except Exception as e:
+            import traceback
             print(f"Error: {e}")
+            if False:  # Set to True for debugging
+                traceback.print_exc()
             sys.exit(1)
 
     def _print_cli_help(self):

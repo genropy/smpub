@@ -20,6 +20,38 @@ except ImportError:
 from smartpublisher import api_server
 
 
+def create_mock_switcher(handler, method_names, prefix=None):
+    """
+    Helper to create a mock switcher for tests.
+
+    Args:
+        handler: Handler instance with methods
+        method_names: List of method names to expose
+        prefix: Optional prefix for method names
+
+    Returns:
+        Configured Mock switcher
+    """
+    mock_switcher = Mock()
+    mock_switcher.prefix = prefix
+    mock_switcher.entries = Mock(return_value=method_names)
+
+    # Configure .get() to return a callable that accepts (handler_instance, *args, **kwargs)
+    # This mimics smartswitch behavior where methods are class-level (unbound)
+    def get_method(name, **kwargs):
+        # Return a wrapper that accepts handler as first arg
+        def wrapper(handler_instance, *args, **kw):
+            # Apply prefix if present
+            full_name = f"{prefix}{name}" if prefix else name
+            method = getattr(handler_instance, full_name)
+            return method(*args, **kw)
+
+        return wrapper
+
+    mock_switcher.get = Mock(side_effect=get_method)
+    return mock_switcher
+
+
 class TestCreateFastAPIApp:
     """Test FastAPI app creation from Publisher."""
 
@@ -98,10 +130,7 @@ class TestEndpointRegistration:
                 return "test result"
 
         handler = TestHandler()
-        mock_switcher = Mock()
-        mock_switcher.prefix = None
-        mock_switcher.entries = Mock(return_value=["test_method"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["test_method"])
 
         # Create mock publisher
         mock_publisher = Mock()
@@ -143,10 +172,7 @@ class TestEndpointRegistration:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = None
-        mock_switcher.entries = Mock(return_value=["list"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["list"])
 
         # Create mock publisher
         mock_publisher = Mock()
@@ -185,10 +211,7 @@ class TestEndpointRegistration:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["add"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["add"], prefix="test_")
 
         # Create mock publisher
         mock_publisher = Mock()
@@ -231,10 +254,7 @@ class TestResponseFormats:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["get"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["get"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -273,10 +293,7 @@ class TestResponseFormats:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["get"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["get"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -316,10 +333,7 @@ class TestResponseFormats:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["get"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["get"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -365,10 +379,7 @@ class TestEnumHandling:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["add"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["add"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -410,10 +421,7 @@ class TestErrorHandling:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["add"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["add"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -449,10 +457,7 @@ class TestErrorHandling:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["add"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["add"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -486,10 +491,7 @@ class TestAsyncMethods:
 
         handler = TestHandler()
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["method"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["method"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -525,10 +527,7 @@ class TestAsyncMethods:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["add"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["add"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -569,10 +568,7 @@ class TestOpenAPISchema:
             "pydantic": {"model": TestRequestModel}
         }
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["add"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["add"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -648,10 +644,7 @@ class TestEdgeCases:
 
         handler = TestHandler()
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = None
-        mock_switcher.entries = Mock(return_value=["nonexistent_method"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["nonexistent_method"])
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {
@@ -678,10 +671,7 @@ class TestEdgeCases:
 
         handler = TestHandler()
 
-        mock_switcher = Mock()
-        mock_switcher.prefix = "test_"
-        mock_switcher.entries = Mock(return_value=["method"])
-        TestHandler.api = mock_switcher
+        TestHandler.api = create_mock_switcher(handler, ["method"], prefix="test_")
 
         mock_publisher = Mock()
         mock_publisher._openapi_handlers = {

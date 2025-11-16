@@ -70,8 +70,16 @@ def discover_publisher_class(path):
     return None, None
 
 
-def add_app(name, path=None, global_mode=False):
-    """Register an app in registry."""
+def add_app(name, module_class=None, path=None, init_params=None, global_mode=False):
+    """Register an app in registry and optionally start CLI.
+
+    Args:
+        name: App name for registry
+        module_class: Optional "module:ClassName" string
+        path: Path to module directory
+        init_params: Dict of initialization parameters
+        global_mode: Use global registry
+    """
     registry = load_registry(global_mode)
 
     # Default to current directory if no path specified
@@ -83,20 +91,35 @@ def add_app(name, path=None, global_mode=False):
         print(f"Error: Path {path} does not exist")
         sys.exit(1)
 
-    # Auto-discover module and class
-    module_name, class_name = discover_publisher_class(path)
+    # Parse module:ClassName if provided
+    if module_class and ":" in module_class:
+        module_name, class_name = module_class.split(":", 1)
+    else:
+        # Auto-discover module and class (Publisher only)
+        module_name, class_name = discover_publisher_class(path)
+        if module_name is None:
+            print(f"Error: No Publisher class found in {path}")
+            print("Specify explicitly: smpub add <name> module:ClassName --path <path>")
+            sys.exit(1)
 
-    if module_name is None:
-        print(f"Error: No Publisher class found in {path}")
-        print("Make sure your app has a class that inherits from Publisher")
-        sys.exit(1)
+    app_entry = {
+        "path": str(path),
+        "module": module_name,
+        "class": class_name
+    }
 
-    registry["apps"][name] = {"path": str(path), "module": module_name, "class": class_name}
+    if init_params:
+        app_entry["init_params"] = init_params
+
+    registry["apps"][name] = app_entry
 
     save_registry(registry, global_mode)
     mode_str = "globally" if global_mode else "locally"
-    print(f"✓ App '{name}' registered {mode_str} at {path}")
+    print(f"✓ App '{name}' registered {mode_str}")
+    print(f"  Path: {path}")
     print(f"  Module: {module_name}, Class: {class_name}")
+    if init_params:
+        print(f"  Init params: {init_params}")
 
 
 def list_apps(global_mode=False):
@@ -131,7 +154,7 @@ def remove_app(name, global_mode=False):
 
 
 def load_app(name, global_mode=False):
-    """Load an app from registry."""
+    """Load an app from registry and create Publisher wrapper if needed."""
     registry = load_registry(global_mode)
 
     if name not in registry["apps"]:
@@ -153,7 +176,34 @@ def load_app(name, global_mode=False):
     try:
         mod = importlib.import_module(app_info["module"])
         app_class = getattr(mod, app_info["class"])
-        return app_class()
+
+        # Import Publisher for type checking
+        from .publisher import Publisher
+
+        # Check if it's already a Publisher subclass
+        if issubclass(app_class, Publisher):
+            return app_class()
+
+        # Not a Publisher - create wrapper
+        # Get init params from registry or use defaults
+        init_params = app_info.get("init_params", {})
+
+        # Try to instantiate the class
+        try:
+            instance = app_class(**init_params)
+        except TypeError as e:
+            print(f"Error: Cannot instantiate {app_info['class']}")
+            print(f"Missing required parameters: {e}")
+            print("Add init_params to registry or use --param in add command")
+            sys.exit(1)
+
+        # Create dynamic Publisher wrapper
+        class DynamicPublisher(Publisher):
+            def on_init(self):
+                self.publish(name, instance)
+
+        return DynamicPublisher()
+
     except (ImportError, AttributeError) as e:
         print(f"Error loading app '{name}': {e}")
         sys.exit(1)
@@ -217,9 +267,14 @@ def main():
     # Management commands
     if command == "add":
         if len(sys.argv) < 3:
-            print("Usage: smpub add <name> [--path <path>] [--global]")
+            print("Usage: smpub add <name> [module:ClassName] [--path <path>] [--param key=value] [--global]")
             sys.exit(1)
         name = sys.argv[2]
+
+        # Check for module:ClassName (optional 3rd argument)
+        module_class = None
+        if len(sys.argv) >= 4 and ":" in sys.argv[3] and not sys.argv[3].startswith("--"):
+            module_class = sys.argv[3]
 
         # Check if --path is specified
         path = None
@@ -230,7 +285,25 @@ def main():
                 sys.exit(1)
             path = sys.argv[path_idx]
 
-        add_app(name, path, global_mode)
+        # Parse --param arguments
+        init_params = {}
+        i = 0
+        while i < len(sys.argv):
+            if sys.argv[i] == "--param":
+                if i + 1 >= len(sys.argv):
+                    print("Error: --param requires a value")
+                    sys.exit(1)
+                param_str = sys.argv[i + 1]
+                if "=" not in param_str:
+                    print(f"Error: --param value must be in format key=value, got: {param_str}")
+                    sys.exit(1)
+                key, value = param_str.split("=", 1)
+                init_params[key] = value
+                i += 2
+            else:
+                i += 1
+
+        add_app(name, module_class, path, init_params or None, global_mode)
         return
 
     if command == "list":

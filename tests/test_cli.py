@@ -154,7 +154,7 @@ class TestAddApp:
         (app_dir / "main.py").write_text("class MyApp(Publisher): pass")
 
         with patch.object(cli, "LOCAL_REGISTRY", registry_file):
-            cli.add_app("testapp", str(app_dir))
+            cli.add_app("testapp", path=str(app_dir))
 
         # Check registry was saved
         assert registry_file.exists()
@@ -175,7 +175,7 @@ class TestAddApp:
 
         with patch.object(cli, "LOCAL_REGISTRY", registry_file):
             with pytest.raises(SystemExit) as exc:
-                cli.add_app("testapp", str(fake_path))
+                cli.add_app("testapp", path=str(fake_path))
 
         assert exc.value.code == 1
         captured = capsys.readouterr()
@@ -190,7 +190,7 @@ class TestAddApp:
 
         with patch.object(cli, "LOCAL_REGISTRY", registry_file):
             with pytest.raises(SystemExit) as exc:
-                cli.add_app("testapp", str(app_dir))
+                cli.add_app("testapp", path=str(app_dir))
 
         assert exc.value.code == 1
         captured = capsys.readouterr()
@@ -223,7 +223,7 @@ class TestAddApp:
         (app_dir / "main.py").write_text("class MyApp(Publisher): pass")
 
         with patch.object(cli, "GLOBAL_REGISTRY", global_registry):
-            cli.add_app("testapp", str(app_dir), global_mode=True)
+            cli.add_app("testapp", path=str(app_dir), global_mode=True)
 
         registry = json.loads(global_registry.read_text())
         assert "testapp" in registry["apps"]

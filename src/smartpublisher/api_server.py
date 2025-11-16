@@ -2,9 +2,9 @@
 FastAPI integration for Publisher HTTP mode.
 """
 
-import inspect
 from enum import Enum
 from typing import Any
+import inspect
 
 try:
     from fastapi import FastAPI, HTTPException, Depends
@@ -71,15 +71,21 @@ def create_fastapi_app(
             if not hasattr(handler, full_method_name):
                 continue
 
-            # Get method
-            method = getattr(handler, full_method_name)
+            # Get the bound method first to access metadata
+            bound_method = getattr(handler, full_method_name)
 
             # Get Pydantic model from func._plugin_meta['pydantic']
             # This is prepared by PydanticPlugin during decoration via on_decorate() hook
             RequestModel = None
-            if hasattr(method, "_plugin_meta") and "pydantic" in method._plugin_meta:
-                pydantic_meta = method._plugin_meta["pydantic"]
+            if hasattr(bound_method, "_plugin_meta") and "pydantic" in bound_method._plugin_meta:
+                pydantic_meta = bound_method._plugin_meta["pydantic"]
                 RequestModel = pydantic_meta.get("model")
+
+            # Get method callable via switcher with smartasync for HTTP (async context)
+            # This allows async methods to work seamlessly in FastAPI
+            from functools import partial
+            method_callable = switcher.get(method_key, use_smartasync=True)
+            method = partial(method_callable, handler)
 
             # Determine if this is a read-only method (use GET) or write method (use POST)
             read_only_methods = {"list", "get", "search", "find", "statistics", "count", "exists"}

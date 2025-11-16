@@ -102,9 +102,55 @@ def create_pydantic_model(method) -> type[BaseModel]:
     return create_model(model_name, **fields)
 
 
+def validate_args_fast(pydantic_meta: dict, args: list[str]) -> dict[str, Any]:
+    """
+    Fast validation using pre-prepared metadata from PydanticPlugin.on_decore().
+
+    This is optimized for CLI usage: metadata is prepared once during decoration,
+    then reused for every validation call.
+
+    Args:
+        pydantic_meta: Pre-prepared metadata from entry.metadata["pydantic"]
+        args: List of string arguments from CLI
+
+    Returns:
+        Dictionary of validated and converted parameters
+
+    Raises:
+        ValidationError: If validation fails
+
+    Example:
+        >>> pydantic_meta = {
+        ...     "model": SomeModel,
+        ...     "param_names": ["name", "age"]
+        ... }
+        >>> validated = validate_args_fast(pydantic_meta, ["Alice", "30"])
+        >>> validated
+        {'name': 'Alice', 'age': 30}
+    """
+    # Get pre-prepared data (no inspect!)
+    model = pydantic_meta["model"]
+    param_names = pydantic_meta["param_names"]
+
+    # Build kwargs dict from positional args
+    kwargs = {}
+    for i, value in enumerate(args):
+        if i < len(param_names):
+            kwargs[param_names[i]] = value
+
+    # Validate with Pydantic (model already created!)
+    validated = model(**kwargs)
+
+    # Return as dict
+    return validated.model_dump()
+
+
 def validate_args(method, args: list[str]) -> dict[str, Any]:
     """
     Validate and convert CLI arguments using Pydantic.
+
+    DEPRECATED: Use validate_args_fast() with pre-prepared metadata for better performance.
+    This function is kept for backward compatibility and fallback scenarios.
 
     Args:
         method: The method to validate against
@@ -169,9 +215,41 @@ def format_validation_error(error: ValidationError) -> str:
     return "\n".join(lines)
 
 
+def get_parameter_info_fast(pydantic_meta: dict) -> list[dict[str, Any]]:
+    """
+    Get parameter information from pre-prepared metadata.
+
+    This is optimized: metadata is prepared once during decoration,
+    then reused for every call.
+
+    Args:
+        pydantic_meta: Pre-prepared metadata from entry.metadata["pydantic"]
+
+    Returns:
+        List of parameter info dicts with keys:
+        - name: Parameter name
+        - type: Type annotation name
+        - required: Whether parameter is required
+        - default: Default value if not required
+
+    Example:
+        >>> pydantic_meta = {"param_info": [...]}
+        >>> get_parameter_info_fast(pydantic_meta)
+        [
+            {'name': 'name', 'type': 'str', 'required': True, 'default': None},
+            {'name': 'age', 'type': 'int', 'required': False, 'default': 25}
+        ]
+    """
+    # Get pre-prepared data (no inspect!)
+    return pydantic_meta.get("param_info", [])
+
+
 def get_parameter_info(method) -> list[dict[str, Any]]:
     """
     Extract parameter information from a method signature.
+
+    DEPRECATED: Use get_parameter_info_fast() with pre-prepared metadata for better performance.
+    This function is kept for backward compatibility and fallback scenarios.
 
     Args:
         method: The method to introspect

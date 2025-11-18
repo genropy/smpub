@@ -67,6 +67,21 @@ smartpublisher/
 
 ## Development Guidelines
 
+### SmartRoute Documentation
+
+**IMPORTANT**: Before making any routing-related changes, ALWAYS consult the SmartRoute documentation:
+
+**Primary reference**: `/Users/gporcari/Sviluppo/genro_ng/meta-genro-libs/sub-projects/smartroute/docs/llm.md`
+
+This documentation contains:
+- Router patterns and best practices
+- add_child() usage and hierarchical routing
+- RoutedClass inheritance patterns
+- Plugin system (logging, pydantic, etc.)
+- Examples and common patterns
+
+SmartRoute is the foundation for all routing in smartpublisher. Understanding its patterns is essential.
+
 ### Core Principles
 
 1. **Clean separation**: Publisher (orchestration) vs PublishedClass (handlers)

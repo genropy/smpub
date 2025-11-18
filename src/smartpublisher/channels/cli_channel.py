@@ -1,5 +1,5 @@
 """
-PublisherCLI - CLI channel implementation.
+CLIChannel - CLI channel implementation.
 
 Key principle: Use ONLY SmartSwitch APIs!
 - switcher.describe() → auto-generated help
@@ -9,7 +9,7 @@ Key principle: Use ONLY SmartSwitch APIs!
 """
 
 import sys
-from smartroute.core import Router
+from smartroute.core import Router, route, RoutedClass
 
 # Try relative import first (when used as package)
 # Fall back to absolute import (when run directly)
@@ -23,7 +23,7 @@ except ImportError:
     from output_formatter import OutputFormatter
 
 
-class PublisherCLI:
+class CLIChannel(RoutedClass):
     """
     CLI channel for Publisher.
 
@@ -39,7 +39,7 @@ class PublisherCLI:
         self.publisher = publisher
         self.formatter = OutputFormatter()
 
-    @cli_api
+    @route("cli_api")
     def help(self, handler_name: str = None) -> dict:
         """
         Show help - auto-generated from SmartSwitch.
@@ -63,7 +63,7 @@ class PublisherCLI:
         # General help - use SmartSwitch API
         return self.publisher.api.describe()
 
-    @cli_api
+    @route("cli_api")
     def version(self) -> dict:
         """Show version information."""
         return {
@@ -74,71 +74,89 @@ class PublisherCLI:
 
     def run(self, args: list = None):
         """
-        Run CLI using ONLY SmartSwitch APIs.
+        Run CLI - orchestrates command dispatch to specialized handlers.
 
-        SmartSwitch handles ALL the work:
-        - Argument parsing
-        - Validation
-        - Type conversion
-        - Execution
-
-        We just dispatch and format output.
+        Args:
+            args: Command line arguments (defaults to sys.argv[1:])
         """
         if args is None:
             args = sys.argv[1:]
 
-        # No args? Show help from SmartSwitch
+        # Show help cases
         if not args or args[0] in ['--help', '-h']:
-            # Get schema from SmartSwitch
-            schema = self.publisher.api.describe()
-            output = self.formatter.format_help(schema)
-            print(output)
+            self._show_general_help()
             return
 
-        # Single arg = handler name, show handler help
         if len(args) == 1:
-            handler_name = args[0]
-            if handler_name in self.publisher.published_instances:
-                instance = self.publisher.published_instances[handler_name]
-                if hasattr(instance.__class__, 'api'):
-                    # SmartSwitch provides schema
-                    schema = instance.__class__.api.describe()
-                    output = self.formatter.format_help(schema)
-                    print(output)
-                    return
+            self._show_handler_help(args[0])
+            return
 
-        # Parse: handler_name method_name [args...]
+        # Parse and route
         handler_name = args[0]
         method_name = args[1] if len(args) > 1 else None
+        method_args = args[2:]
 
-        # Special case: system commands
         if handler_name == '_system':
-            if not method_name:
-                # Show system commands
-                schema = self.publisher.api['_system'].__class__.api.describe()
+            self._handle_system_command(method_name, method_args)
+        else:
+            self._handle_business_command(handler_name, method_name, method_args)
+
+    def _show_general_help(self):
+        """Show general help from Publisher API."""
+        schema = self.publisher.api.describe()
+        output = self.formatter.format_help(schema)
+        print(output)
+
+    def _show_handler_help(self, handler_name: str):
+        """Show help for specific handler."""
+        if handler_name in self.publisher.published_instances:
+            instance = self.publisher.published_instances[handler_name]
+            if hasattr(instance.__class__, 'api'):
+                schema = instance.__class__.api.describe()
                 output = self.formatter.format_help(schema)
                 print(output)
                 return
 
-            # Execute system command - SmartSwitch handles everything
-            try:
-                # Get callable from SmartSwitch
-                system_handler = self.publisher.published_instances['_system']
-                method_callable = system_handler.__class__.api.get(method_name, use_smartasync=True)
+        # Handler not found or no API - delegate to business command handler
+        self._handle_business_command(handler_name, None, [])
 
-                # Call with instance - SmartSwitch validates args
-                result = method_callable(system_handler)
+    def _handle_system_command(self, method_name: str, method_args: list):
+        """
+        Handle _system commands.
 
-                # Format and print
-                output = self.formatter.format_json(result)
-                print(output)
-                return
+        Args:
+            method_name: System command to execute (None = show help)
+            method_args: Arguments for the command
+        """
+        if not method_name:
+            # Show system commands help
+            schema = self.publisher.api['_system'].__class__.api.describe()
+            output = self.formatter.format_help(schema)
+            print(output)
+            return
 
-            except Exception as e:
-                print(f"Error: {e}")
-                sys.exit(1)
+        # Execute system command - SmartSwitch handles everything
+        try:
+            system_handler = self.publisher.published_instances['_system']
+            method_callable = system_handler.__class__.api.get(method_name, use_smartasync=True)
+            result = method_callable(system_handler)
+            output = self.formatter.format_json(result)
+            print(output)
 
-        # Business command
+        except Exception as e:
+            print(f"Error: {e}")
+            sys.exit(1)
+
+    def _handle_business_command(self, handler_name: str, method_name: str, method_args: list):
+        """
+        Handle business logic commands.
+
+        Args:
+            handler_name: Name of the handler to invoke
+            method_name: Method to execute (None = show help)
+            method_args: Arguments for the method
+        """
+        # Check handler exists
         if handler_name not in self.publisher.published_instances:
             print(f"Error: Handler '{handler_name}' not found")
             print(f"Available: {', '.join(self.publisher.published_instances.keys())}")
@@ -146,12 +164,13 @@ class PublisherCLI:
 
         instance = self.publisher.published_instances[handler_name]
 
+        # Check has API
         if not hasattr(instance.__class__, 'api'):
             print(f"Error: Handler '{handler_name}' has no API")
             return
 
+        # No method: show handler help
         if not method_name:
-            # Show handler help
             schema = instance.__class__.api.describe()
             output = self.formatter.format_help(schema)
             print(output)
@@ -159,18 +178,8 @@ class PublisherCLI:
 
         # Execute method - SmartSwitch handles EVERYTHING
         try:
-            # Get callable from SmartSwitch
             method_callable = instance.__class__.api.get(method_name, use_smartasync=True)
-
-            # Call with instance
-            # SmartSwitch handles:
-            # - Parsing args[2:]
-            # - Validation
-            # - Type conversion
-            # - Execution
             result = method_callable(instance)
-
-            # Format and print at edge
             output = self.formatter.format_json(result)
             print(output)
 

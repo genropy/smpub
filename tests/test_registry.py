@@ -2,7 +2,7 @@
 
 import pytest
 
-from smartpublisher.registry import AppRegistry, get_local_registry, get_global_registry
+from smartpublisher.app_registry import AppRegistry, get_local_registry, get_global_registry
 
 
 class TestAppRegistry:

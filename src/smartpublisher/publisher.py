@@ -9,21 +9,26 @@ This is the ONE instance that manages:
 User apps inherit from PublishedClass, not Publisher.
 """
 
+import sys
 from pathlib import Path
 
 # Try relative imports first (when used as package)
 # Fall back to absolute imports (when run directly)
 try:
-    from .registry import AppRegistry, get_local_registry, get_global_registry
-    from .channels.cli import PublisherCLI
-    from .channels.http import PublisherHTTP
+    from smartroute import Router, route
+    from smartseeds.decorators import smartsuper
+    from .published import PublishedClass
+    from .app_registry import AppRegistry
+    from .chan_registry import ChanRegistry
 except ImportError:
-    from registry import AppRegistry, get_local_registry, get_global_registry
-    from channels.cli import PublisherCLI
-    from channels.http import PublisherHTTP
+    from smartroute import Router, route
+    from smartseeds.decorators import smartsuper
+    from published import PublishedClass
+    from app_registry import AppRegistry
+    from chan_registry import ChanRegistry
 
 
-class Publisher:
+class Publisher(PublishedClass):
     """
     Central Publisher coordinator.
 
@@ -36,6 +41,10 @@ class Publisher:
     Apps inherit from PublishedClass, not Publisher.
     """
 
+    # SmartRoute Router for Publisher commands
+    api = Router(name='publisher').plug("logging").plug("pydantic")
+
+    @smartsuper
     def __init__(self, registry_path: Path = None, use_global: bool = False):
         """
         Initialize Publisher.
@@ -44,152 +53,87 @@ class Publisher:
             registry_path: Custom registry path (optional)
             use_global: Use global registry instead of local
         """
-        # Initialize registry
-        if registry_path:
-            self.registry = AppRegistry(registry_path)
-        elif use_global:
-            self.registry = get_global_registry()
-        else:
-            self.registry = get_local_registry()
+        self.app_registry = AppRegistry(self, registry_path=registry_path, use_global=use_global)
+        self.chan_registry = ChanRegistry(self)
 
-        # Initialize channels
-        self.channels = {
-            'cli': PublisherCLI(self),
-            'http': PublisherHTTP(self)
-        }
+        # Connect registries via add_child for hierarchical routing
+        self.api.add_child(self.app_registry, name="apps")
+        self.api.add_child(self.chan_registry, name="chan")
 
-        # Publisher's own Router (for system-level commands)
-        # Note: For now, keep as simple attribute. Can be converted to RoutedClass pattern later.
-        self.api = None  # TODO: Implement if needed for system commands
-
-        # Currently loaded apps
-        self.loaded_apps = {}
-
-    def load_app(self, app_name: str):
+    @route("api")
+    def serve(self, channel: str = "http", **options):
         """
-        Load an app from registry.
+        Placeholder serve command exposed via API.
 
         Args:
-            app_name: Name of the app to load
-
-        Returns:
-            PublishedClass instance
+            channel: Channel identifier to activate
+            **options: Additional channel-specific options
         """
-        # Check if already loaded
-        if app_name in self.loaded_apps:
-            return self.loaded_apps[app_name]
-
-        # Load from registry
-        app = self.registry.load(app_name)
-
-        # Set publisher reference
-        if hasattr(app, '_set_publisher'):
-            app._set_publisher(self)
-
-        # Call on_add lifecycle hook
-        if hasattr(app, 'smpub_on_add'):
-            app.smpub_on_add()
-            # TODO: Handle result (logging, etc.)
-
-        # Cache loaded app
-        self.loaded_apps[app_name] = app
-
-        return app
-
-    def unload_app(self, app_name: str):
-        """
-        Unload an app.
-
-        Args:
-            app_name: Name of the app to unload
-
-        Returns:
-            dict: Unload result
-        """
-        if app_name not in self.loaded_apps:
-            return {
-                "error": f"App '{app_name}' not loaded"
-            }
-
-        app = self.loaded_apps[app_name]
-
-        # Call on_remove lifecycle hook
-        if hasattr(app, 'smpub_on_remove'):
-            app.smpub_on_remove()
-            # TODO: Handle result
-
-        # Remove from cache
-        del self.loaded_apps[app_name]
-
         return {
-            "status": "unloaded",
-            "app": app_name
+            "status": "disabled",
+            "message": "Serve command not wired yet",
+            "channel": channel,
+            "options": options,
         }
 
-    def get_channel(self, channel_name: str):
-        """
-        Get a channel by name.
+    @route("api")
+    def quit(self):
+        """Placeholder quit command exposed via API."""
+        return {
+            "status": "disabled",
+            "message": "Quit command not wired yet",
+        }
 
-        Args:
-            channel_name: 'cli', 'http', etc.
+    def run_cli(self):
+        """CLI entry point - delegates to CLI channel."""
+        self.chan_registry['cli'].run(sys.argv[1:])
 
-        Returns:
-            Channel instance
+    # @route("api")
+    # def load_app(self, app_name: str):
+    #     return self.app_registry.load(app_name)
 
-        Raises:
-            KeyError: If channel not found
-        """
-        return self.channels[channel_name]
+    # @route("api")
+    # def unload_app(self, app_name: str):
+    #     return self.app_registry.unload(app_name)
 
-    def add_channel(self, channel_name: str, channel_instance):
-        """
-        Add a custom channel.
+    # def get_channel(self, channel_name: str):
+    #     return self.chan_registry.get(channel_name)
 
-        Args:
-            channel_name: Channel identifier
-            channel_instance: Channel object
-        """
-        self.channels[channel_name] = channel_instance
+    # def run_cli(self, args: list = None):
+    #     self.chan_registry.get('cli').run(args)
 
-    def run_cli(self, args: list = None):
-        """
-        Run CLI channel.
-
-        Args:
-            args: CLI arguments (uses sys.argv if None)
-        """
-        cli = self.get_channel('cli')
-        cli.run(args)
-
-    def run_http(self, port: int = 8000, **kwargs):
-        """
-        Run HTTP server.
-
-        Args:
-            port: Port to listen on
-            **kwargs: Additional uvicorn options
-        """
-        http = self.get_channel('http')
-        http.run(port=port, **kwargs)
+    # def run_http(self, port: int = 8000, **kwargs):
+    #     self.chan_registry.get('http').run(port=port, **kwargs)
 
 
-# Singleton instance for convenience
-_default_publisher = None
+# # Singleton instance for convenience
+# _default_publisher = None
 
 
-def get_publisher(use_global: bool = False) -> Publisher:
-    """
-    Get the default Publisher instance.
+# def get_publisher(use_global: bool = False) -> Publisher:
+#     """
+#     Get the default Publisher instance.
 
-    Args:
-        use_global: Use global registry
+#     Args:
+#         use_global: Use global registry
 
-    Returns:
-        Publisher instance
-    """
-    global _default_publisher
+#     Returns:
+#         Publisher instance
+#     """
+#     global _default_publisher
 
-    if _default_publisher is None:
-        _default_publisher = Publisher(use_global=use_global)
+#     if _default_publisher is None:
+#         _default_publisher = Publisher(use_global=use_global)
 
-    return _default_publisher
+#     return _default_publisher
+
+
+# Module-level entry point for CLI
+def main():
+    """Entry point for smpub command."""
+    publisher = Publisher()
+    publisher.run_cli()
+
+
+if __name__ == "__main__":
+    main()

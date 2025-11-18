@@ -15,7 +15,7 @@ Architecture:
 
 from .published import PublishedClass
 from .publisher import Publisher, get_publisher
-from .registry import AppRegistry, get_local_registry, get_global_registry
+from .app_registry import AppRegistry, get_local_registry, get_global_registry
 from .system_commands import SystemCommands
 from .output_formatter import OutputFormatter
 

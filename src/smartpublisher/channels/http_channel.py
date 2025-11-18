@@ -8,7 +8,7 @@ Examples: health, openapi_schema, metrics, etc.
 These commands make sense in HTTP but not necessarily in CLI.
 """
 
-from smartroute.core import Router
+from smartroute.core import Router, route
 
 
 class PublisherHTTP:
@@ -40,7 +40,7 @@ class PublisherHTTP:
         """
         self.publisher = publisher
 
-    @http_api
+    @route("http_api")
     def health(self) -> dict:
         """
         Health check endpoint.
@@ -56,7 +56,7 @@ class PublisherHTTP:
             "handlers": len(self.publisher.published_instances)
         }
 
-    @http_api
+    @route("http_api")
     def openapi_schema(self) -> dict:
         """
         Generate OpenAPI schema.
@@ -118,7 +118,7 @@ class PublisherHTTP:
 
         return openapi_spec
 
-    @http_api
+    @route("http_api")
     def metrics(self) -> dict:
         """
         Get metrics.

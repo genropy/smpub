@@ -13,10 +13,10 @@ Key principles:
 import sys
 import json
 from pathlib import Path
-from smartroute.core import Router
+from smartroute.core import Router, RoutedClass, route
 
 
-class AppRegistry:
+class AppRegistry(RoutedClass):
     """
     Registry for managing Published applications.
 
@@ -32,15 +32,27 @@ class AppRegistry:
 
     api = Router(name="apps").plug("pydantic")
 
-    def __init__(self, registry_path: Path):
+    def __init__(self, publisher=None, registry_path: Path = None, use_global: bool = False):
         """
         Initialize AppRegistry.
 
         Args:
-            registry_path: Path to registry JSON file
+            publisher: Publisher instance (optional, for standalone use)
+            registry_path: Custom registry path (optional, for tests)
+            use_global: Use global registry (~/.smpub/) instead of local
         """
-        self.registry_path = registry_path
+        self._publisher = publisher
+
+        # Determine registry path
+        if registry_path:
+            self.registry_path = registry_path
+        elif use_global:
+            self.registry_path = Path.home() / ".smpub" / "registry.json"
+        else:
+            self.registry_path = Path.cwd() / ".smpub" / "registry.json"
+
         self._data = self._load()
+        self._loaded_apps = {}  # Cache of loaded app instances
 
     def _load(self) -> dict:
         """Load registry from JSON file."""
@@ -56,7 +68,7 @@ class AppRegistry:
         with open(self.registry_path, 'w') as f:
             json.dump(self._data, f, indent=2)
 
-    @api
+    @route("api")
     def add(self, name: str, path: str, module: str = "main", class_name: str = "App") -> dict:
         """
         Register an app in the registry.
@@ -94,7 +106,7 @@ class AppRegistry:
             "class": class_name
         }
 
-    @api
+    @route("api")
     def remove(self, name: str) -> dict:
         """
         Unregister an app from the registry.
@@ -122,7 +134,7 @@ class AppRegistry:
             "path": app_info["path"]
         }
 
-    @api
+    @route("api")
     def list(self) -> dict:
         """
         List all registered apps.
@@ -135,7 +147,7 @@ class AppRegistry:
             "apps": self._data["apps"]
         }
 
-    @api
+    @route("api")
     def getapp(self, name: str) -> dict:
         """
         Get information about a specific app.
@@ -174,6 +186,10 @@ class AppRegistry:
         Raises:
             ValueError: If app not found
         """
+        # Check if already loaded
+        if name in self._loaded_apps:
+            return self._loaded_apps[name]
+
         if name not in self._data["apps"]:
             available = list(self._data["apps"].keys())
             raise ValueError(
@@ -205,21 +221,58 @@ class AppRegistry:
                 f"Module '{app_info['module']}' has no class '{app_info['class']}'"
             )
 
-        # Instantiate and return Published instance
-        return app_class()
+        # Instantiate
+        app = app_class()
+
+        # Call lifecycle hook if exists
+        if hasattr(app, 'smpub_on_add'):
+            app.smpub_on_add()
+
+        # Cache and return
+        self._loaded_apps[name] = app
+        return app
+
+    def unload(self, name: str) -> dict:
+        """
+        Unload an app.
+
+        Args:
+            name: App name
+
+        Returns:
+            dict: Status result
+        """
+        if name not in self._loaded_apps:
+            return {
+                "error": f"App '{name}' not loaded"
+            }
+
+        app = self._loaded_apps[name]
+
+        # Call lifecycle hook if exists
+        if hasattr(app, 'smpub_on_remove'):
+            app.smpub_on_remove()
+
+        # Remove from cache
+        del self._loaded_apps[name]
+
+        return {
+            "status": "unloaded",
+            "app": name
+        }
 
 
 # Factory functions for registry discovery
 
 def get_local_registry() -> AppRegistry:
-    """Get local registry (.published in current directory)."""
-    registry_path = Path.cwd() / ".published"
+    """Get local registry (.smpub/registry.json in current directory)."""
+    registry_path = Path.cwd() / ".smpub" / "registry.json"
     return AppRegistry(registry_path)
 
 
 def get_global_registry() -> AppRegistry:
-    """Get global registry (~/.smartlibs/publisher/registry.json)."""
-    registry_path = Path.home() / ".smartlibs" / "publisher" / "registry.json"
+    """Get global registry (~/.smpub/registry.json)."""
+    registry_path = Path.home() / ".smpub" / "registry.json"
     return AppRegistry(registry_path)
 
 

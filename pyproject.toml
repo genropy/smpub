@@ -28,6 +28,7 @@ classifiers = [
 dependencies = [
     "smartroute>=0.1.0",
     "smartasync>=0.2.0",
+    "smartseeds>=0.1.0",
     "pydantic>=2.0",
 ]
 
@@ -81,7 +82,7 @@ Repository = "https://github.com/genropy/smartpublisher"
 "Bug Tracker" = "https://github.com/genropy/smartpublisher/issues"
 
 [project.scripts]
-smpub = "smartpublisher.cli:main"
+smpub = "smartpublisher.publisher:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

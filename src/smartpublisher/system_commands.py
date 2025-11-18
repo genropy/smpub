@@ -7,7 +7,7 @@ They work the same way on CLI, HTTP, or any other channel.
 NO print statements - only structured data returns.
 """
 
-from smartroute.core import Router
+from smartroute.core import Router, route
 
 
 class SystemCommands:
@@ -29,7 +29,7 @@ class SystemCommands:
         """
         self.publisher = publisher
 
-    @api
+    @route("api")
     def list_handlers(self) -> dict:
         """
         List all published handlers.
@@ -58,7 +58,7 @@ class SystemCommands:
             "handlers": handlers
         }
 
-    @api
+    @route("api")
     def get_handler_info(self, handler_name: str) -> dict:
         """
         Get detailed information about a specific handler.
@@ -89,7 +89,7 @@ class SystemCommands:
             "api_schema": api_schema
         }
 
-    @api
+    @route("api")
     def get_api_tree(self) -> dict:
         """
         Get complete API tree structure.

@@ -1,10 +1,10 @@
 """
 Channel implementations for SmartPublisher.
 
-Each channel is a separate class with its own Switcher for channel-specific commands.
+Each channel is a separate class with its own Router for channel-specific commands.
 """
 
-from .cli import PublisherCLI
-from .http import PublisherHTTP
+from .cli_channel import CLIChannel
+from .http_channel import PublisherHTTP
 
-__all__ = ['PublisherCLI', 'PublisherHTTP']
+__all__ = ['CLIChannel', 'PublisherHTTP']

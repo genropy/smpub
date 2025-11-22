@@ -35,6 +35,7 @@ sys.path.insert(0, str(repo_root / "src"))
 sys.path.insert(0, str(repo_root))
 
 from smartpublisher import Publisher  # noqa: E402  # pylint: disable=wrong-import-position
+from examples.demo_shop.sample_shop import dbop_plugin  # noqa: E402  # pylint: disable=wrong-import-position
 from examples.demo_shop.sample_shop.shop import (
     Shop,
 )  # noqa: E402  # pylint: disable=wrong-import-position
@@ -43,7 +44,7 @@ from examples.demo_shop.sample_shop.shop import (
 class PublishedShop(Publisher):
     """Publisher for Shop class."""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         db_path = Path(__file__).parent / "shop.db"
         self._shop = Shop(f"sqlite:{db_path}")
